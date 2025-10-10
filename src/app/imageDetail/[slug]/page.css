@@ -97,9 +97,16 @@
   filter: blur(10px); pointer-events: none;
 }
 .dev-wrap .img {
-  width: 100%; height: auto; display: block; object-fit: contain;
-  background: #fff; border-radius: 14px;
-  user-select: none; -webkit-user-drag: none; pointer-events: none; /* protection */
+  width: 100%;
+  height: auto;
+  max-height: 600px;           /* limits tall images */
+  display: block;
+  object-fit: contain;         /* keeps full image visible */
+  background: #fff;
+  border-radius: 14px;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;        /* protection */
   box-shadow: 0 0 0 2px rgba(230,198,109,.15) inset;
 }
 /* capture right-click/long-press without blocking layout */

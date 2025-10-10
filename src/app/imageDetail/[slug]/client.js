@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './page.css';
-
+import Link from 'next/link';
+import axios from 'axios';
 /**
  * Expected data:
  * {
@@ -23,7 +24,9 @@ export default function ImageDetailClient({ data }) {
   const [likes, setLikes] = useState(data?.likeCount ?? 0);
   const [saves, setSaves] = useState(data?.savedCount ?? 0);
   const [downloads, setDownloads] = useState(data?.downloadCount ?? 0);
-
+  const [downloaded, setDownloaded] = useState(false);
+  const [count,setCount]=useState({})
+//const [imageId,setImageId]=useState("")
   // comments (demo) — plug to API later
   const [comments, setComments] = useState([
     { id: 'c1', name: 'Aarav', text: 'दर्शन से हृदय में शांति और भक्ति का भाव जागा।', at: '2h' }
@@ -32,9 +35,15 @@ export default function ImageDetailClient({ data }) {
 
   // image protection – block right click / drag / long press save
   useEffect(() => {
+    async function getCount() {
+         const imageId=data._id
+         const dataCount=await axios.get(`http://localhost:7001/api/v1/images/${imageId}/count`)
+        // console.log(dataCount.data.data)
+         setCount(dataCount?.data?.data)
+         console.log(imageId+"imageId")
+    }
     const blocker = (e) => e.preventDefault();
     const el = document.querySelector('.protect-scope');
-
     // context menu + drag on scope only
     el?.addEventListener('contextmenu', blocker, { passive: false });
     el?.addEventListener('dragstart', blocker, { passive: false });
@@ -42,25 +51,15 @@ export default function ImageDetailClient({ data }) {
     // iOS/Android long-press save prevention (disable callout)
     document.documentElement.style.webkitTouchCallout = 'none';
     document.documentElement.style.webkitUserSelect = 'none';
-
     return () => {
+      getCount()
       el?.removeEventListener('contextmenu', blocker);
       el?.removeEventListener('dragstart', blocker);
       document.documentElement.style.webkitTouchCallout = '';
       document.documentElement.style.webkitUserSelect = '';
     };
-  }, []);
-
-  // actions
-  const onDownload = () => {
-    const a = document.createElement('a');
-    a.href = data.awsImgUrl;
-    a.download = `${data.img_slug || 'devotional-image'}.png`;
-    document.body.appendChild(a); a.click(); a.remove();
-    setDownloads(n => n + 1);
-    // TODO: POST /api/images/:id/download
-  };
-
+  }, [downloaded]);
+  console.log(downloaded+"downloaded")
   const onShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
     try {
@@ -80,6 +79,10 @@ export default function ImageDetailClient({ data }) {
     setForm({ name: '', email: '', text: '' });
     // TODO: POST /comments
   };
+  const setDownload=()=>{
+    setDownloaded(true)
+  }
+  console.log(count.downloadCount+"count")
 
   return (
     <section className="dev-wrap">
@@ -119,9 +122,11 @@ export default function ImageDetailClient({ data }) {
             {/* MOBILE ACTIONS — appear just below the photo */}
             <div className="mobile-actions card only-mobile">
               <h3 className="sec">Quick Actions</h3>
-
-              <button className="btn btn-solid btn-download" onClick={onDownload}>
-                <i className="bi bi-download me"></i> Download HD
+              <button className="btn btn-solid btn-download">
+                <i className="bi bi-download me"></i>
+                 <Link className='text-white'
+                  href={`http://localhost:7001/api/v1/images/${data._id}/download`}> 
+                Download HD</Link>
                 <span className="chip">{data.aspect_ratio}</span>
               </button>
 
@@ -233,16 +238,18 @@ export default function ImageDetailClient({ data }) {
             </div>
 
             <div className="card stats">
-              <div className="stat"><i className="bi bi-download"></i><div><div className="s-l">Downloads</div><div className="s-v">{downloads}</div></div></div>
-              <div className="stat"><i className="bi bi-heart"></i><div><div className="s-l">Likes</div><div className="s-v">{likes}</div></div></div>
-              <div className="stat"><i className="bi bi-bookmark"></i><div><div className="s-l">Saves</div><div className="s-v">{saves}</div></div></div>
+              <div className="stat"><i className="bi bi-download"></i><div><div className="s-l">
+                Downloads</div><div className="s-v">{count.downloadCount}</div></div></div>
+              <div className="stat"><i className="bi bi-heart"></i><div><div className="s-l">Likes</div><div className="s-v">{count.likedCount}</div></div></div>
+              <div className="stat"><i className="bi bi-bookmark"></i><div><div className="s-l">Saves</div><div className="s-v">{count.savedCount}</div></div></div>
               <div className="stat"><i className="bi bi-activity"></i><div><div className="s-l">Status</div><div className="s-v">{data.isLive ? 'Live' : 'Hidden'}</div></div></div>
             </div>
 
             <div className="card section">
               <h3 className="sec">Download</h3>
-              <button className="btn btn-solid btn-download" onClick={onDownload}>
-                <i className="bi bi-download me"></i> Download HD <span className="chip">{data.aspect_ratio}</span>
+              <button className="btn btn-solid btn-download">
+                <i className="bi bi-download me"></i> <Link className='text-white' href={`http://localhost:7001/api/v1/images/${data._id}/download`}> 
+                Download HD</Link> <span className="chip">{data.aspect_ratio}</span>
               </button>
               <div className="sub">Ultra-HD • {data.imgLevel}</div>
             </div>

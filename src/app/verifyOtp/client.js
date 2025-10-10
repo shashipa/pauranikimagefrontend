@@ -19,7 +19,7 @@ async function  handleSubmit(e) {
     })
     console.log(data.data)
     if(data.data.success===true){
-        router.push("/userDetail")
+        router.push("/userprofile")
     }
     else {
         setMessage(data.data.message)

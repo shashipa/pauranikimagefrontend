@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import './page.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import  Link  from 'next/link';
+import Link from 'next/link';
 
 /** Reusable SweetAlert2 toast */
 const toast = Swal.mixin({
@@ -18,7 +18,9 @@ const toast = Swal.mixin({
   color: '#fff',
 });
 
-export default function BestSection({ data, initialCount = 30, userId }) {
+const PAGE_SIZE = 30; // <-- fixed 30 items per page
+
+export default function Ganesh({ data, initialCount = 30, userId }) {
   const router = useRouter();
 
   // Normalize incoming items list
@@ -26,27 +28,27 @@ export default function BestSection({ data, initialCount = 30, userId }) {
 
   // Saved image ids for this user
   const [savedImages, setSavedImages] = useState(() => new Set());
-  const [visible, setVisible] = useState(() => []);
-  const [isShuffling, setIsShuffling] = useState(false);
 
-  // Pick N unique random items from ITEMS
-  const pick = useCallback(
-    (n) => {
-      if (!ITEMS.length) return [];
-      const count = Math.min(n, ITEMS.length);
-      const idxs = new Set();
-      while (idxs.size < count) {
-        idxs.add(Math.floor(Math.random() * ITEMS.length));
-      }
-      return [...idxs].map((i) => ITEMS[i]);
-    },
-    [ITEMS]
-  );
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(ITEMS.length / PAGE_SIZE));
 
-  // Initialize visible items
+  // Current page items
+  const [visible, setVisible] = useState([]);
+
+  // Initialize/Update visible items when ITEMS or page change
   useEffect(() => {
-    setVisible(pick(initialCount));
-  }, [pick, initialCount]);
+    const start = (page - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    setVisible(ITEMS.slice(start, end));
+  }, [ITEMS, page]);
+
+  // If data source changes and current page goes out of range, clamp it
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+    if (page < 1) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPages]);
 
   // Fetch user’s saved images once userId is available
   useEffect(() => {
@@ -113,28 +115,61 @@ export default function BestSection({ data, initialCount = 30, userId }) {
     }
   };
 
-  const shuffle = () => {
-    if (isShuffling) return;
-    setIsShuffling(true);
-    setTimeout(() => {
-      setVisible(pick(initialCount));
-      setTimeout(() => setIsShuffling(false), 500);
-    }, 350);
+  // ----- Pagination helpers (1, 2, 3, … last) -----
+  const getPageNumbers = (current, total) => {
+    const pages = [];
+    const windowSize = 2; // show current-2 .. current+2
+
+    const add = (p) => {
+      if (p >= 1 && p <= total) pages.push(p);
+    };
+
+    add(1);
+    for (let p = current - windowSize; p <= current + windowSize; p++) add(p);
+    add(total);
+
+    // Deduplicate and sort
+    const unique = [...new Set(pages)].sort((a, b) => a - b);
+
+    // Insert ellipses
+    const result = [];
+    for (let i = 0; i < unique.length; i++) {
+      const p = unique[i];
+      if (i === 0) {
+        result.push(p);
+      } else {
+        const prev = unique[i - 1];
+        if (p - prev === 1) {
+          result.push(p);
+        } else {
+          result.push('…');
+          result.push(p);
+        }
+      }
+    }
+    return result;
+  };
+
+  const goPage = (p) => {
+    if (typeof p !== 'number') return;
+    if (p < 1 || p > totalPages) return;
+    setPage(p);
+    // scroll to top for better UX
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <section className="best-section">
       <div className="best-header">
         <h2>Best Collections</h2>
-        <a href="#" className="best-link">See all ›</a>
       </div>
 
       {/* Masonry container */}
-      <div className={`masonry ${isShuffling ? 'is-shuffling' : ''}`}>
+      <div className="masonry">
         {visible.map((item, i) => {
           const key = item?._id || item?.id || item?.awsImgUrl || i;
           const img = item?.awsImgUrl || item?.img || item?.image || item?.url || '';
-          const slug=item?.img_slug
+          const slug = item?.img_slug;
           const alt = item?.title || item?.imgHeading || item?.godName || 'Pauranik image';
           const imageId = String(item?._id || item?.id || '');
           const isSaved = imageId && savedImages.has(imageId);
@@ -159,7 +194,7 @@ export default function BestSection({ data, initialCount = 30, userId }) {
                   >
                     <i className="bi bi-bookmark" />
                   </button>
-                ) :("")}
+                ) : ("")}
 
                 <Link href={`imageDetail/${slug}`} className="best-btn best-download" title="Download">
                   <i className="bi bi-download" />
@@ -170,13 +205,38 @@ export default function BestSection({ data, initialCount = 30, userId }) {
         })}
       </div>
 
-      <div className="best-actions">
+      {/* Pagination controls */}
+      <div className="best-actions" style={{ gap: 8, display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}>
         <button
-          className={`shuffle-btn ${isShuffling ? 'loading' : ''}`}
-          onClick={shuffle}
-          disabled={isShuffling}
+          className="shuffle-btn"
+          onClick={() => goPage(page - 1)}
+          disabled={page <= 1}
         >
-          {isShuffling ? 'Shuffling…' : 'Shuffle Images'}
+          ← Prev
+        </button>
+
+        {getPageNumbers(page, totalPages).map((p, idx) =>
+          p === '…' ? (
+            <span key={`dots-${idx}`} className="shuffle-btn" style={{ pointerEvents: 'none', opacity: 0.6 }}>
+              …
+            </span>
+          ) : (
+            <button
+              key={p}
+              className={`shuffle-btn ${p === page ? 'loading' : ''}`}
+              onClick={() => goPage(p)}
+            >
+              {p}
+            </button>
+          )
+        )}
+
+        <button
+          className="shuffle-btn"
+          onClick={() => goPage(page + 1)}
+          disabled={page >= totalPages}
+        >
+          Next →
         </button>
       </div>
     </section>

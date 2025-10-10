@@ -1,15 +1,18 @@
-import Img_Client from "./client";
+import Ganesh from "./client";
 import axios from "axios"
 import { cookies } from "next/headers";
-export default async function Img_Page(){
+import Krishna from "./client";
+export default async function page(){
 const cookieStore=cookies()
 const userId=await cookieStore.get("userId")?.value
 console.log(userId+"userId")
 const getSlideImage=async(limit)=>{
     try{
-    const url=`http://localhost:7001/api/v1/image?limit=${limit}`
+        let name="Lord Krishna"
+    const url=`http://localhost:7001/api/v1/image?godName=${name}&limit=${limit}`
+    console.log(url)
     const data=await axios.get(url)
-  // console.log(data.data)
+ console.log(data.data)
     return data.data
     }
     catch(error){
@@ -19,6 +22,6 @@ const getSlideImage=async(limit)=>{
 const data=await getSlideImage(100000)
 return (
 <>
-    <Img_Client data={data} userId={userId}/>
+    <Krishna data={data} userId={userId}/>
     </>)
 }

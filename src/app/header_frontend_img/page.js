@@ -4,10 +4,10 @@ export default async function Header_frontend_page(){
 
 const getSlideImage=async(limit)=>{
     try{
-    const url=`http://localhost:7001/api/v1/image?limit=${limit}`
+    const url=`http://localhost:7001/api/v1/image?limit=${limit}&aspect_ratio=768:768`
     
     const data=await axios.get(url)
-   // console.log(data.data)
+    console.log(data.data)
     return data.data
     }
     catch(error){
