@@ -1,0 +1,136 @@
+/* ===== Section & Heading ===== */
+.best-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 12px;
+}
+
+.best-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.best-title {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  background: linear-gradient(90deg, #9333ea, #ec4899, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ===== Pinterest Masonry (CSS columns) ===== */
+.masonry {
+  column-count: 4;          /* desktop */
+  column-gap: 14px;
+}
+@media (max-width: 1024px) { .masonry { column-count: 3; } }  /* tablet */
+@media (max-width: 640px)  { .masonry { column-count: 2; } }  /* mobile */
+
+/* ===== Card ===== */
+.best-card {
+  position: relative;
+  display: inline-block;      /* required for CSS column masonry */
+  width: 100%;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  border: none;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ===== Image (natural height for Pinterest look) ===== */
+.best-img {
+  width: 100%;
+  height: auto;              /* variable height for masonry */
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  transition: opacity .3s ease;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.best-img.is-loading { opacity: 0; }
+.best-img.is-loaded  { opacity: 1; }
+
+/* ===== Shimmer placeholder ===== */
+.img-shimmer {
+  position: absolute;
+  inset: 0;
+  min-height: 220px;         /* ensures visible skeleton before image shows */
+  background: linear-gradient(100deg, #f2f2f2 0%, #eaeaea 20%, #f2f2f2 40%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== Controls: hidden until hover; pinned positions ===== */
+.best-controls {
+  position: absolute;
+  inset: 0;                      /* full overlay for positioning */
+  opacity: 0;                    /* hidden by default */
+  pointer-events: none;          /* don't block hover */
+  transition: opacity .25s ease;
+}
+.best-card:hover .best-controls {
+  opacity: 1;                    /* show on hover */
+  pointer-events: all;           /* enable clicks */
+}
+
+/* Buttons base */
+.best-btn {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;     /* constant border -> no hover shift */
+  background: rgba(255,255,255,0.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: background .2s ease, box-shadow .2s ease;
+}
+.best-btn:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+.best-btn i {
+  font-size: 18px;
+  color: #111827;
+}
+
+/* ❤️ top-left, 🔖 top-right, ⬇️ bottom-center */
+.best-btn.like      { top: 8px; left: 8px; }
+.best-btn.save      { top: 8px; right: 8px; }
+.best-btn.download  { bottom: 8px; left: 50%; transform: translateX(-50%); }
+
+/* ===== Pagination actions ===== */
+.best-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.shuffle-btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, opacity .2s ease;
+}
+.shuffle-btn:hover   { background: #f8fafc; }
+.shuffle-btn.loading { opacity: 0.7; cursor: default; }

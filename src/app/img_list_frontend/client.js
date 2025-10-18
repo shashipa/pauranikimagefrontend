@@ -2,10 +2,10 @@
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import './page.css';
+import './list.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import  Link  from 'next/link';
+import Link from 'next/link';
 
 /** Reusable SweetAlert2 toast */
 const toast = Swal.mixin({
@@ -17,6 +17,73 @@ const toast = Swal.mixin({
   background: '#1f1f1f',
   color: '#fff',
 });
+
+function ImageCard({ item, isSaved, onLike, onSave }) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+
+  const img = item?.awsImgUrl || item?.img || item?.image || item?.url || '';
+  const alt = item?.title || item?.imgHeading || item?.godName || 'Pauranik image';
+  const slug = item?.img_slug;
+
+  return (
+    <article className="best-card">
+      {/* Shimmer placeholder until the image resolves */}
+      {!loaded && !errored && <div className="img-shimmer" aria-hidden="true" />}
+
+      <img
+        className={`best-img ${loaded ? 'is-loaded' : 'is-loading'}`}
+        src={img}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={() => { setErrored(true); setLoaded(true); }}
+        onContextMenu={(e) => e.preventDefault()}
+        draggable={false}
+      />
+
+      {/* Controls: hidden by default, visible on hover */}
+      <div className="best-controls">
+        {/* ❤️ Like — top-left */}
+        <button
+          className="best-btn like"
+          onClick={() => onLike(item)}
+          title="Like"
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <i className="bi bi-heart" />
+        </button>
+
+        {/* 🔖 Save — top-right (or check if already saved) */}
+        {!isSaved ? (
+          <button
+            className="best-btn save"
+            onClick={() => onSave(item)}
+            title="Save"
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <i className="bi bi-bookmark" />
+          </button>
+        ) : (
+          <span className="best-btn save" title="Saved" aria-label="Saved">
+            <i className="bi bi-check2" />
+          </span>
+        )}
+
+        {/* ⬇️ Download/Open details — bottom-center */}
+        <Link
+          href={`imageDetail/${slug}`}
+          className="best-btn download"
+          title="Open details"
+          onContextMenu={(e) => e.preventDefault()}
+          draggable={false}
+        >
+          <i className="bi bi-download" />
+        </Link>
+      </div>
+    </article>
+  );
+}
 
 export default function BestSection({ data, initialCount = 30, userId }) {
   const router = useRouter();
@@ -48,14 +115,13 @@ export default function BestSection({ data, initialCount = 30, userId }) {
     setVisible(pick(initialCount));
   }, [pick, initialCount]);
 
-  // Fetch user’s saved images once userId is available
+  // Fetch user’s saved images
   useEffect(() => {
     const fetchSaved = async () => {
       if (!userId) return;
       try {
         const res = await axios.post('http://localhost:7001/api/v1/user/image', { userId });
 
-        // Expect imagedetail = [ { imageDetail: [ { imageId: <id or populated obj> }, ... ] }, ... ]
         const ids = new Set();
         (res?.data?.imagedetail || []).forEach((doc) => {
           (doc?.imageDetail || []).forEach((d) => {
@@ -97,15 +163,12 @@ export default function BestSection({ data, initialCount = 30, userId }) {
         return next;
       });
 
-      // Success toast
       await toast.fire({
         icon: 'success',
         title: 'Image saved to your collection',
       });
     } catch (error) {
       console.error('Save failed:', error?.response?.data || error?.message || error);
-
-      // Error toast
       await toast.fire({
         icon: 'error',
         title: 'Failed to save image',
@@ -124,48 +187,27 @@ export default function BestSection({ data, initialCount = 30, userId }) {
 
   return (
     <section className="best-section">
+      {/* Centered gradient heading */}
       <div className="best-header">
-        <h2>Best Collections</h2>
+        <h2 className="best-title">Best Collections</h2>
         <a href="#" className="best-link">See all ›</a>
       </div>
 
-      {/* Masonry container */}
+      {/* Pinterest Masonry container (columns) */}
       <div className={`masonry ${isShuffling ? 'is-shuffling' : ''}`}>
         {visible.map((item, i) => {
           const key = item?._id || item?.id || item?.awsImgUrl || i;
-          const img = item?.awsImgUrl || item?.img || item?.image || item?.url || '';
-          const slug=item?.img_slug
-          const alt = item?.title || item?.imgHeading || item?.godName || 'Pauranik image';
           const imageId = String(item?._id || item?.id || '');
           const isSaved = imageId && savedImages.has(imageId);
 
           return (
-            <article className="masonry-item best-card" key={key}>
-              <img className="best-img" src={img} alt={alt} loading="lazy" />
-              <div className="best-controls">
-                <button
-                  className="best-btn best-like"
-                  onClick={() => onLike(item)}
-                  title="Like"
-                >
-                  <i className="bi bi-heart" />
-                </button>
-
-                {!isSaved ? (
-                  <button
-                    className="best-btn best-save"
-                    onClick={() => onSave(item)}
-                    title="Save"
-                  >
-                    <i className="bi bi-bookmark" />
-                  </button>
-                ) :("")}
-
-                <Link href={`imageDetail/${slug}`} className="best-btn best-download" title="Download">
-                  <i className="bi bi-download" />
-                </Link>
-              </div>
-            </article>
+            <ImageCard
+              key={key}
+              item={item}
+              isSaved={isSaved}
+              onLike={onLike}
+              onSave={onSave}
+            />
           );
         })}
       </div>

@@ -17,7 +17,7 @@ async function  handleSubmit(e) {
         },
         withCredentials:true
     })
-    console.log(data.data)
+   // console.log(data.data)
     if(data.data.success===true){
         router.push("/userprofile")
     }

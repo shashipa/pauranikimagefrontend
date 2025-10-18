@@ -2,7 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import "./globals.css";
-
+import DevotionalNavbar from "./navigation/client";
+import { cookies } from "next/headers";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -19,12 +20,16 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const cookieStore=cookies()
+  const token = cookieStore.get("token")?.value || "";
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+      
         {children}
+
       </body>
     </html>
   );

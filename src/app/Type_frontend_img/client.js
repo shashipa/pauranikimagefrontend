@@ -1,75 +1,284 @@
 'use client';
 
-import { useState } from 'react';
-import './page.css';
+import { useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import './type.css';
+import axios from 'axios';
+import Swal from 'sweetalert2';
+import Link from 'next/link';
 
-const FILTERS = ['All', 'Ganesh', 'Durga', 'Kaali', 'Shankar', 'Vishnu', 'Ram', 'Krishna', 'Lakshmi', 'Saraswati', 'Hanuman'];
+/** Toast */
+const toast = Swal.mixin({
+  toast: true,
+  position: 'bottom-end',
+  showConfirmButton: false,
+  timer: 2200,
+  timerProgressBar: true,
+  background: '#1f1f1f',
+  color: '#fff',
+});
 
-const ITEMS = [
-  { id: 1, category: 'Ganesh', img: 'https://picsum.photos/900/1200?1', title: 'Ganesh' },
-  { id: 2, category: 'Durga', img: 'https://picsum.photos/900/1100?2', title: 'Durga' },
-  { id: 3, category: 'Kaali', img: 'https://picsum.photos/900/1000?3', title: 'Kaali' },
-  { id: 4, category: 'Shankar', img: 'https://picsum.photos/900/1050?4', title: 'Shankar' },
-  { id: 5, category: 'Vishnu', img: 'https://picsum.photos/900/1150?5', title: 'Vishnu' },
-  { id: 6, category: 'Ram', img: 'https://picsum.photos/900/980?6',  title: 'Ram' },
-  { id: 7, category: 'Krishna', img: 'https://picsum.photos/900/1120?7', title: 'Krishna' },
-  { id: 8, category: 'Lakshmi', img: 'https://picsum.photos/900/1080?8', title: 'Lakshmi' },
-  { id: 9, category: 'Saraswati', img: 'https://picsum.photos/900/1180?9', title: 'Saraswati' },
-  { id: 10, category: 'Hanuman', img: 'https://picsum.photos/900/990?10', title: 'Hanuman' },
+const PAGE_SIZE = 30;
+
+const FILTERS = [
+  'All',
+  'Pattachitra',
+  'Mithila (Madhubani)',
+  'Tanjore Painting',
+  'Miniature Paintings',
+  'Warli Painting',
+  'Kerala Murals',
+  'Phad Painting',
+  'Cheriyal Scrolls',
+  'Kalamkari',
+  'Gond Art',
+  'Kalighat Painting',
+  'Ajanta Cave Frescoes'
 ];
 
-export default function GalleryPage() {
-  const [active, setActive] = useState('All');
+function ImageCard({ item, isSaved, onLike, onSave }) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
 
-  const filtered = active === 'All' ? ITEMS : ITEMS.filter(i => i.category === active);
-
-  // stub actions
-  const onLike = (it) => console.log('like', it.id);
-  const onSave = (it) => console.log('save', it.id);
+  const img = item?.awsImgUrl || item?.img || item?.image || item?.url || '';
+  const alt = item?.title || item?.imgHeading || item?.godName || 'Pauranik image';
+  const slug = item?.img_slug;
 
   return (
-    <section className="gallery-section">
-      <div className="gallery-filters">
+    <article className="pk-card">
+      {/* shimmer placeholder (visible until image resolves) */}
+      {!loaded && !errored && <div className="pk-shimmer" aria-hidden="true" />}
+
+      <img
+        className={`pk-img ${loaded ? 'is-loaded' : 'is-loading'}`}
+        src={img}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={() => { setErrored(true); setLoaded(true); }}
+        onContextMenu={(e) => e.preventDefault()}
+        draggable={false}
+      />
+
+      {/* fixed-position controls */}
+      <div className="pk-controls">
+        <button
+          className="pk-ctrl pk-like"
+          title="Like"
+          onClick={() => onLike(item)}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <i className="bi bi-heart" />
+        </button>
+
+        {!isSaved ? (
+          <button
+            className="pk-ctrl pk-save"
+            title="Save"
+            onClick={() => onSave(item)}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <i className="bi bi-bookmark" />
+          </button>
+        ) : (
+          <span className="pk-ctrl pk-save" title="Saved" aria-label="Saved">
+            <i className="bi bi-check2" />
+          </span>
+        )}
+
+        <Link
+          href={`imageDetail/${slug}`}
+          className="pk-ctrl pk-download"
+          title="Open details"
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <i className="bi bi-download" />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+export default function Saraswati({ data, userId }) {
+  const router = useRouter();
+
+  const ITEMS = useMemo(() => (Array.isArray(data?.data) ? data.data : []), [data]);
+
+  // default filter
+  const [active, setActive] = useState('Pattachitra');
+
+  const filtered = useMemo(() => {
+    if (active === 'All') return ITEMS;
+    return ITEMS.filter(i => i?.imgArtType === active || i?.category === active);
+  }, [ITEMS, active]);
+
+  // saved images
+  const [savedImages, setSavedImages] = useState(() => new Set());
+
+  // pagination
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  useEffect(() => { setPage(1); }, [active]);
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+    if (page < 1) setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPages]);
+
+  const visible = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    return filtered.slice(start, end);
+  }, [filtered, page]);
+
+  // fetch saved
+  useEffect(() => {
+    const fetchSaved = async () => {
+      if (!userId) return;
+      try {
+        const res = await axios.post('http://localhost:7001/api/v1/user/image', { userId });
+        const ids = new Set();
+        (res?.data?.imagedetail || []).forEach(doc => {
+          (doc?.imageDetail || []).forEach(d => {
+            const id = typeof d?.imageId === 'object' ? d?.imageId?._id : d?.imageId;
+            if (id) ids.add(String(id));
+          });
+        });
+        setSavedImages(ids);
+      } catch (e) {
+        console.error('Saved fetch failed:', e?.response?.data || e?.message || e);
+      }
+    };
+    fetchSaved();
+  }, [userId]);
+
+  // actions
+  const onLike = (item) => {
+    console.log('Liked:', item?.imgHeading || item?.title || item?._id);
+  };
+
+  const onSave = async (item) => {
+    try {
+      if (!userId) {
+        router.push('/user');
+        return;
+      }
+      const imageId = String(item?._id || item?.id);
+      if (!imageId) return;
+
+      await axios.post('http://localhost:7001/api/v1/user/image/save', { userId, imageId });
+      setSavedImages(prev => new Set(prev).add(imageId));
+      await toast.fire({ icon: 'success', title: 'Image saved to your collection' });
+    } catch (error) {
+      console.error('Save failed:', error?.response?.data || error?.message || error);
+      await toast.fire({ icon: 'error', title: 'Failed to save image' });
+    }
+  };
+
+  // pagination helpers
+  const getPageNumbers = (current, total) => {
+    const pages = [];
+    const windowSize = 2;
+    const add = (p) => { if (p >= 1 && p <= total) pages.push(p); };
+    add(1);
+    for (let p = current - windowSize; p <= current + windowSize; p++) add(p);
+    add(total);
+    const unique = [...new Set(pages)].sort((a,b) => a-b);
+    const out = [];
+    for (let i=0; i<unique.length; i++) {
+      const p = unique[i];
+      if (i === 0) out.push(p);
+      else {
+        const prev = unique[i-1];
+        if (p - prev === 1) out.push(p);
+        else { out.push('…'); out.push(p); }
+      }
+    }
+    return out;
+  };
+
+  const goPage = (p) => {
+    if (typeof p !== 'number') return;
+    if (p < 1 || p > totalPages) return;
+    setPage(p);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <section className="pk-section">
+      {/* gradient heading */}
+      <div className="pk-header">
+        <h2 className="pk-title">Best Collections</h2>
+      </div>
+
+      {/* filters */}
+      <div className="pk-filters" role="tablist" aria-label="Art style filters">
         {FILTERS.map(f => (
           <button
             key={f}
-            className={`filter-btn ${active === f ? 'active' : ''}`}
+            className={`pk-filter ${active === f ? 'active' : ''}`}
             onClick={() => setActive(f)}
+            role="tab"
+            aria-selected={active === f}
           >
             {f}
           </button>
         ))}
       </div>
 
-      <div className="gallery-grid">
-        {filtered.map(item => (
-          <figure key={item.id} className="gallery-item">
-            <img src={item.img} alt={item.title} loading="lazy" />
+      {/* content */}
+      {filtered.length === 0 ? (
+        <div className="pk-empty" role="status" aria-live="polite">
+          <div className="pk-empty-emoji" aria-hidden="true">🖼️</div>
+          <h3>No images currently for “{active}”.</h3>
+          <p>Try another style filter or check back soon—new artworks arrive regularly.</p>
+        </div>
+      ) : (
+        <>
+          {/* Pinterest masonry (columns): 4 / 3 / 2 */}
+          <div className="pk-masonry">
+            {visible.map((item, i) => {
+              const id = String(item?._id || item?.id || '');
+              const isSaved = id && savedImages.has(id);
+              const key = item?._id || item?.id || item?.awsImgUrl || i;
+              return (
+                <ImageCard
+                  key={key}
+                  item={item}
+                  isSaved={isSaved}
+                  onLike={onLike}
+                  onSave={onSave}
+                />
+              );
+            })}
+          </div>
 
-            {/* hover controls */}
-            <div className="gi-controls" aria-hidden="true">
-              <button className="gi-btn gi-like" title="Like" onClick={() => onLike(item)}>
-                <i className="bi bi-heart"></i>
-              </button>
+          {/* pagination */}
+          <div className="pk-actions">
+            <button className="pk-page" onClick={() => goPage(page - 1)} disabled={page <= 1}>
+              ← Prev
+            </button>
 
-              <button className="gi-btn gi-save" title="Save" onClick={() => onSave(item)}>
-                <i className="bi bi-bookmark"></i>
-              </button>
+            {getPageNumbers(page, totalPages).map((p, idx) =>
+              p === '…' ? (
+                <span key={`dots-${idx}`} className="pk-page dots">…</span>
+              ) : (
+                <button
+                  key={p}
+                  className={`pk-page ${p === page ? 'active' : ''}`}
+                  onClick={() => goPage(p)}
+                >
+                  {p}
+                </button>
+              )
+            )}
 
-              <a
-                className="gi-btn gi-download"
-                title="Download"
-                href={item.img}
-                download
-              >
-                <i className="bi bi-download"></i>
-              </a>
-            </div>
-
-            <figcaption className="gallery-label">{item.category}</figcaption>
-          </figure>
-        ))}
-      </div>
+            <button className="pk-page" onClick={() => goPage(page + 1)} disabled={page >= totalPages}>
+              Next →
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 }

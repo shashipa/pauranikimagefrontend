@@ -1,11 +1,17 @@
 "use client"
 import { useState,useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 const axios=require("axios")
-export default  function LoginForm() {
+export default  function LoginForm({token}) {
     let router=useRouter()
     const [email,setEmail]=useState("")
     const [message,setMessage]=useState("")
+      useEffect(() => {
+    if (token) {
+      router.replace('/userprofile'); // replace avoids back button to this page
+    }
+  }, [token, router]);
+
     //const [token,seToken]=useState("")
    async function handleSubmit(e){
    e.preventDefault()
@@ -23,7 +29,7 @@ export default  function LoginForm() {
      setMessage(data.data.message)
    }
     }
-  return (
+    return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-100 to-yellow-50 relative overflow-hidden">
      {message}
       <div className="absolute w-96 h-96 bg-orange-200 rounded-full blur-3xl opacity-30 top-10 left-10"></div>
@@ -74,5 +80,7 @@ export default  function LoginForm() {
         </div>
       </div>
     </div>
+
+
   );
 }

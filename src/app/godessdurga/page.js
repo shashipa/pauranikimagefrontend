@@ -11,7 +11,7 @@ const getSlideImage=async(limit)=>{
     const url=`http://localhost:7001/api/v1/image?godName=${name}&limit=${limit}`
     console.log(url)
     const data=await axios.get(url)
- console.log(data.data)
+ //console.log(data.data)
     return data.data
     }
     catch(error){

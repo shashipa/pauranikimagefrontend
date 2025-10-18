@@ -1,15 +1,12 @@
 import { redirect } from "next/navigation";
-import Profile from "./client";
+import DevotionalNavbar from "./client";
 import { cookies } from "next/headers";
 
-export default async function page(){
+export default async function Nav(){
     const cookieStore=cookies()
     const token=await cookieStore.get("token")?.value
   //  console.log(token+"token from profile")
 return (<>
-{
-    token?<Profile/>:redirect("/user")
-}
-
+<DevotionalNavbar token={token}/>
 </>)
 }

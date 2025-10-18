@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import './page.css';
+import './durga.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
@@ -18,9 +18,76 @@ const toast = Swal.mixin({
   color: '#fff',
 });
 
-const PAGE_SIZE = 30; // <-- fixed 30 items per page
+const PAGE_SIZE = 30; // fixed 30 items per page
 
-export default function Durga({ data, initialCount = 30, userId }) {
+function ImageCard({ item, isSaved, onLike, onSave }) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+
+  const img = item?.awsImgUrl || item?.img || item?.image || item?.url || '';
+  const alt = item?.title || item?.imgHeading || item?.godName || 'Pauranik image';
+  const slug = item?.img_slug;
+
+  return (
+    <article className="best-card">
+      {/* shimmer until image resolves */}
+      {!loaded && !errored && <div className="img-shimmer" aria-hidden="true" />}
+
+      <img
+        className={`best-img ${loaded ? 'is-loaded' : 'is-loading'}`}
+        src={img}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        onError={() => { setErrored(true); setLoaded(true); }}
+        onContextMenu={(e) => e.preventDefault()}
+        draggable={false}
+      />
+
+      {/* controls: hidden until hover; pinned positions */}
+      <div className="best-controls">
+        {/* ❤️ Like — top-left */}
+        <button
+          className="best-btn like"
+          onClick={() => onLike(item)}
+          title="Like"
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <i className="bi bi-heart" />
+        </button>
+
+        {/* 🔖 Save — top-right */}
+        {!isSaved ? (
+          <button
+            className="best-btn save"
+            onClick={() => onSave(item)}
+            title="Save"
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <i className="bi bi-bookmark" />
+          </button>
+        ) : (
+          <span className="best-btn save" title="Saved" aria-label="Saved">
+            <i className="bi bi-check2" />
+          </span>
+        )}
+
+        {/* ⬇️ Download/Open details — bottom-center */}
+        <Link
+          href={`imageDetail/${slug}`}
+          className="best-btn download"
+          title="Open details"
+          onContextMenu={(e) => e.preventDefault()}
+          draggable={false}
+        >
+          <i className="bi bi-download" />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+export default function Durga({ data, userId }) {
   const router = useRouter();
 
   // Normalize incoming items list
@@ -83,7 +150,6 @@ export default function Durga({ data, initialCount = 30, userId }) {
         router.push('/user');
         return;
       }
-
       const imageId = String(item?._id || item?.id);
       if (!imageId) return;
 
@@ -99,15 +165,12 @@ export default function Durga({ data, initialCount = 30, userId }) {
         return next;
       });
 
-      // Success toast
       await toast.fire({
         icon: 'success',
         title: 'Image saved to your collection',
       });
     } catch (error) {
       console.error('Save failed:', error?.response?.data || error?.message || error);
-
-      // Error toast
       await toast.fire({
         icon: 'error',
         title: 'Failed to save image',
@@ -154,64 +217,38 @@ export default function Durga({ data, initialCount = 30, userId }) {
     if (typeof p !== 'number') return;
     if (p < 1 || p > totalPages) return;
     setPage(p);
-    // scroll to top for better UX
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <section className="best-section">
+      {/* Centered gradient heading */}
       <div className="best-header">
-        <h2>Best Collections</h2>
+        <h2 className="best-title">Best Collections</h2>
       </div>
 
-      {/* Masonry container */}
+      {/* Masonry container (Pinterest columns) */}
       <div className="masonry">
         {visible.map((item, i) => {
           const key = item?._id || item?.id || item?.awsImgUrl || i;
-          const img = item?.awsImgUrl || item?.img || item?.image || item?.url || '';
-          const slug = item?.img_slug;
-          const alt = item?.title || item?.imgHeading || item?.godName || 'Pauranik image';
           const imageId = String(item?._id || item?.id || '');
           const isSaved = imageId && savedImages.has(imageId);
 
           return (
-            <article className="masonry-item best-card" key={key}>
-              <img className="best-img" src={img} alt={alt} loading="lazy" />
-              <div className="best-controls">
-                <button
-                  className="best-btn best-like"
-                  onClick={() => onLike(item)}
-                  title="Like"
-                >
-                  <i className="bi bi-heart" />
-                </button>
-
-                {!isSaved ? (
-                  <button
-                    className="best-btn best-save"
-                    onClick={() => onSave(item)}
-                    title="Save"
-                  >
-                    <i className="bi bi-bookmark" />
-                  </button>
-                ) : ("")}
-
-                <Link href={`imageDetail/${slug}`} className="best-btn best-download" title="Download">
-                  <i className="bi bi-download" />
-                </Link>
-              </div>
-            </article>
+            <ImageCard
+              key={key}
+              item={item}
+              isSaved={isSaved}
+              onLike={onLike}
+              onSave={onSave}
+            />
           );
         })}
       </div>
 
       {/* Pagination controls */}
       <div className="best-actions" style={{ gap: 8, display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}>
-        <button
-          className="shuffle-btn"
-          onClick={() => goPage(page - 1)}
-          disabled={page <= 1}
-        >
+        <button className="shuffle-btn" onClick={() => goPage(page - 1)} disabled={page <= 1}>
           ← Prev
         </button>
 
@@ -231,11 +268,7 @@ export default function Durga({ data, initialCount = 30, userId }) {
           )
         )}
 
-        <button
-          className="shuffle-btn"
-          onClick={() => goPage(page + 1)}
-          disabled={page >= totalPages}
-        >
+        <button className="shuffle-btn" onClick={() => goPage(page + 1)} disabled={page >= totalPages}>
           Next →
         </button>
       </div>
