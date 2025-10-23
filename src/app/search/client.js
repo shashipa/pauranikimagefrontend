@@ -237,13 +237,13 @@ export default function SearchPage({ userId }) {
             <article className="masonry-item best-card" key={key}>
               <img className="best-img" src={img} alt={alt} loading="lazy" />
               <div className="best-controls">
-                <button
+                {/* <button
                   className="best-btn best-like"
                   onClick={() => onLike(item)}
                   title="Like"
                 >
                   <i className="bi bi-heart" />
-                </button>
+                </button> */}
 
                 {!isSaved ? (
                   <button

@@ -47,14 +47,14 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
       {/* controls: hidden until hover; pinned positions */}
       <div className="best-controls">
         {/* ❤️ Like — top-left */}
-        <button
+        {/* <button
           className="best-btn like"
           onClick={() => onLike(item)}
           title="Like"
           onContextMenu={(e) => e.preventDefault()}
         >
           <i className="bi bi-heart" />
-        </button>
+        </button> */}
 
         {/* 🔖 Save — top-right */}
         {!isSaved ? (

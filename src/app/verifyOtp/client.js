@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import './otp.css'
 export default function OtpPage({email,token}) {
 const [otp,setOtp]=useState("")
 const [message,setMessage]=useState("")
@@ -47,22 +48,21 @@ return (
           <h1 className="mt-3 text-3xl font-bold tracking-wide text-orange-700">
             Pauranik Image
           </h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-gray-600 ">
             Enter the 6-digit code we sent to your email
           </p>
-          <p className="text-xs text-gray-500 mt-1">example@domain.com</p>
         </div>
 
         {/* OTP Inputs */}
         <form className="space-y-6" onSubmit={handleSubmit}>
-         <div className="grid grid-cols-6 gap-3">
-      <div className="w-full flex flex-col items-center justify-center">
+         <div className="grid gap-3">
+      <div className="w-full  items-center justify-center">
       <input
         type="text"
         value={otp}
         onChange={(e) => setOtp(e.target.value)}
         placeholder="Enter your OTP"
-        className="w-full max-w-md h-14 rounded-2xl border border-orange-300/70 bg-white/90 text-center text-lg sm:text-xl text-gray-800 tracking-widest outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm placeholder-gray-400"
+        className="w-full input_box  h-14 rounded-2xl border border-orange-300/70 bg-white/90 text-center text-lg sm:text-xl text-gray-800 outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent shadow-sm placeholder-gray-400"
       />
     </div>
     </div>

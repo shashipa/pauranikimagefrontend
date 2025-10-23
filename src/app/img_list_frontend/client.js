@@ -45,15 +45,14 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
       {/* Controls: hidden by default, visible on hover */}
       <div className="best-controls">
         {/* ❤️ Like — top-left */}
-        <button
+        {/* <button
           className="best-btn like"
           onClick={() => onLike(item)}
           title="Like"
           onContextMenu={(e) => e.preventDefault()}
         >
           <i className="bi bi-heart" />
-        </button>
-
+        </button> */}
         {/* 🔖 Save — top-right (or check if already saved) */}
         {!isSaved ? (
           <button
@@ -190,7 +189,6 @@ export default function BestSection({ data, initialCount = 30, userId }) {
       {/* Centered gradient heading */}
       <div className="best-header">
         <h2 className="best-title">Best Collections</h2>
-        <a href="#" className="best-link">See all ›</a>
       </div>
 
       {/* Pinterest Masonry container (columns) */}

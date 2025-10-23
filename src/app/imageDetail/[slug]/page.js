@@ -108,9 +108,9 @@ export default async function ImageDetailPage({ params }) {
     const email=await  cookieStore.get("email")?.value
   const detail = await fetchImageBySlug(slug);
   if (!detail || detail.isLive === false) notFound();
-
+//console.log(+"from imgde")
   const canonicalUrl = `${SITE_URL}/imageDetail/${detail.img_slug || slug}`;
-  const ogImage = detail.awsImgUrl || "/og/home-hero.jpg";
+  const ogImage = detail.awsImgUrl || "logo.png";
   const altText = detail.imgHeading || "Divine Hindu art wallpaper";
   const keywordsCsv = Array.isArray(detail.imgKeyword)
     ? detail.imgKeyword.join(", ")
@@ -124,6 +124,7 @@ export default async function ImageDetailPage({ params }) {
     caption: detail.imgDesc || detail.imgHeading,
     contentUrl: detail.awsImgUrl,
     url: canonicalUrl,
+    logo:detail.awsImgUrl,
     license: `${SITE_URL}/license`,
     keywords: keywordsCsv,
     author: { "@type": "Organization", name: "PauranikArt", url: SITE_URL },
