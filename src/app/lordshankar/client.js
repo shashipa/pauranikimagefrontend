@@ -6,7 +6,7 @@ import './shankar.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
-
+let URL="https://pauranikart.com/api/v1/"
 /** Reusable SweetAlert2 toast */
 const toast = Swal.mixin({
   toast: true,
@@ -122,7 +122,7 @@ export default function Durga({ data, userId }) {
     const fetchSaved = async () => {
       if (!userId) return;
       try {
-        const res = await axios.post('http://localhost:7001/api/v1/user/image', { userId });
+        const res = await axios.post(`${URL}user/image`, { userId });
 
         // Expect imagedetail = [ { imageDetail: [ { imageId: <id or populated obj> }, ... ] }, ... ]
         const ids = new Set();
@@ -153,7 +153,7 @@ export default function Durga({ data, userId }) {
       const imageId = String(item?._id || item?.id);
       if (!imageId) return;
 
-      await axios.post('http://localhost:7001/api/v1/user/image/save', {
+      await axios.post(`${URL}image/save`, {
         userId,
         imageId,
       });

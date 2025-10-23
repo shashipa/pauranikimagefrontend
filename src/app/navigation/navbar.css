@@ -1,0 +1,94 @@
+/* Container */
+.dev-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: #fff; /* clean white */
+  transition: background .25s ease;
+}
+
+.dev-nav.scrolled {
+  /* keep it simple – no shadows; just slightly opaque if you want */
+  background: #fff;
+}
+
+/* Top / bottom thin gradient lines */
+.dev-nav__strip {
+  height: 2px;
+}
+.dev-nav__strip--top {
+  background: linear-gradient(90deg, #ff3b3b 0%, #f97316 45%, #ffb300 100%);
+}
+.dev-nav__strip--bottom {
+  background: linear-gradient(90deg, #ff3b3b 0%, #f97316 45%, #ffb300 100%);
+}
+
+/* Width & padding */
+.dev-nav__container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* 3-column layout */
+.dev-nav__grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 10px 0;
+}
+.dev-nav__spacer { /* empty to truly center brand */ }
+.dev-nav__brand { justify-self: center; }
+.dev-nav__actions { justify-self: end; }
+
+/* Brand link */
+.dev-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+/* Wordmark: flat gradient text, no shadow */
+.dev-wordmark {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  font-weight: 800;
+  letter-spacing: .4px;
+  font-size: clamp(20px, 3vw, 28px);
+  background: linear-gradient(90deg, #ffb300 0%, #f97316 45%, #c81e1e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1;
+}
+
+/* Om logo sizing comes from inline style; no CSS effects here */
+.om-logo { display: block; }
+
+/* Button: flat gradient, no shadow */
+.dev-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  color: #fff;
+  background: #333; /* fallback */
+}
+
+.dev-btn--grad {
+  background: linear-gradient(90deg, #f97316 0%, #f39c12 50%, #e53935 100%);
+}
+
+.dev-btn:hover { opacity: .92; }
+
+/* Small screens: keep same layout but adjust spacing */
+@media (max-width: 480px) {
+  .dev-nav__container { padding: 0 12px; }
+  .dev-btn { padding: 8px 14px; font-size: 13px; }
+}

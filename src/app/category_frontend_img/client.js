@@ -2,7 +2,7 @@
 
 import { Container } from 'react-bootstrap';
 import Link from 'next/link';
-import './page.css';
+import './cat.css';
 
 const CATEGORIES = [
   { key: 'lordganesh',    label: 'Lord Ganesh',    img: '/ganesh.png' },
@@ -19,13 +19,12 @@ const CATEGORIES = [
 
 export default function Category_Client() {
   return (
-    <section className="cat-section">
-      <Container>
-        <div className="cat-header">
+    <>
+     <div className="best-title">
           <h2>Popular Categories</h2>
-          <Link href="#" className="cat-all">Shop all categories&nbsp;›</Link>
         </div>
 
+    <section className="cat-section">
         <div className="cat-grid">
           {CATEGORIES.map(c => (
             <Link key={c.key} href={`/${c.key}`} className="cat-card">
@@ -37,7 +36,8 @@ export default function Category_Client() {
             </Link>
           ))}
         </div>
-      </Container>
+     
     </section>
+    </>
   );
 }

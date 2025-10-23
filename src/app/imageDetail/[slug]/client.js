@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './page.css';
+
 import Link from 'next/link';
 import axios from 'axios';
+let URL="https://pauranikart.com/api/v1/"
+
 /**
  * Expected data:
  * {
@@ -14,8 +17,18 @@ import axios from 'axios';
  * }
  */
 
+/* -------------------- SECURE DOWNLOAD (no IP, no query params) --------------------
+   Flow:
+   1) Pre-check with Accept: application/json to catch "limit reached" message.
+   2) If OK, submit a real <form method=POST action=/images/download> with body { id }
+      so the browser handles any redirect/stream securely.
+----------------------------------------------------------------------------------- */
+
+
+
 export default function ImageDetailClient({ data }) {
   // derived
+   const [downloading,setDownloading]=useState(false)
   const created = useMemo(() => {
     try { return new Date(data?.createdAt).toLocaleDateString(); } catch { return ''; }
   }, [data?.createdAt]);
@@ -26,19 +39,66 @@ export default function ImageDetailClient({ data }) {
   const [downloads, setDownloads] = useState(data?.downloadCount ?? 0);
   const [downloaded, setDownloaded] = useState(false);
   const [count,setCount]=useState({})
-//const [imageId,setImageId]=useState("")
+  const [popup, setPopup] = useState({ show:false, title:'', message:'', date:'' });
+
   // comments (demo) — plug to API later
   const [comments, setComments] = useState([
     { id: 'c1', name: 'Aarav', text: 'दर्शन से हृदय में शांति और भक्ति का भाव जागा।', at: '2h' }
   ]);
   const [form, setForm] = useState({ name: '', email: '', text: '' });
+async function handleDownload({ data, setPopup }) {
+  try {
+   
+    // 1️⃣ Get user IP
+    const ipRes = await fetch("https://api.ipify.org?format=json");
+    const ipData = await ipRes.json();
+    const ip = ipData?.ip || "";
+
+    // 2️⃣ POST to your backend and get response as blob
+    const res = await fetch("https://pauranikart.com/api/v1/images/download", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: data._id, ip }),
+    });
+   
+
+    
+    // 3️⃣ Check if backend returned JSON (limit reached)
+    const contentType = res.headers.get("content-type");
+     console.log(contentType)
+    if (contentType && contentType.includes("application/json")) {
+      const result = await res.json();
+      if (result?.message?.includes("Download limit")) {
+        setPopup({
+          show: true,
+          title: "Download Limit Reached ⚠️",
+          message: result.message,
+          date: result.enableDate,
+        });
+        return;
+      }
+    }
+
+    // 4️⃣ Otherwise, it's the image — convert blob and download
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${data.imgHeading || "image"}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Download error:", err);
+  }
+}
 
   // image protection – block right click / drag / long press save
   useEffect(() => {
     async function getCount() {
          const imageId=data._id
-         const dataCount=await axios.get(`http://localhost:7001/api/v1/images/${imageId}/count`)
-        // console.log(dataCount.data.data)
+         const dataCount=await axios.get(`${URL}images/${imageId}/count`)
          setCount(dataCount?.data?.data)
          console.log(imageId+"imageId")
     }
@@ -122,30 +182,32 @@ export default function ImageDetailClient({ data }) {
             {/* MOBILE ACTIONS — appear just below the photo */}
             <div className="mobile-actions card only-mobile">
               <h3 className="sec">Quick Actions</h3>
-              <button className="btn btn-solid btn-download">
+            <button
+            style={{cursor:"pointer"}}
+                className="btn btn-solid btn-download"
+                onClick={() => handleDownload({ data, setDownloaded, setPopup })}
+              >
                 <i className="bi bi-download me"></i>
-                 <Link className='text-white'
-                  href={`http://localhost:7001/api/v1/images/${data._id}/download`}> 
-                Download HD</Link>
+                Download HD
                 <span className="chip">{data.aspect_ratio}</span>
               </button>
 
-              <div className="row-2 mt-2">
+              {/* <div className="row-2 mt-2">
                 <button className="btn btn-pill btn-share" onClick={onShare}>
                   <i className="bi bi-share me"></i> Share
                 </button>
                 <button className="btn btn-pill btn-save" onClick={onSave}>
                   <i className="bi bi-bookmark-heart me"></i> Save
                 </button>
-              </div>
+              </div> */}
 
-              <button className="btn btn-solid btn-like mt-2" onClick={onLike}>
+              {/* <button className="btn btn-solid btn-like mt-2" onClick={onLike}>
                 <i className="bi bi-heart-fill me"></i> Like this Image
               </button>
 
               <button className="btn btn-solid btn-donate mt-2">
                 <i className="bi bi-coin me"></i> Donate
-              </button>
+              </button> */}
             </div>
 
             {/* ABOUT */}
@@ -161,7 +223,7 @@ export default function ImageDetailClient({ data }) {
             </section>
 
             {/* COMMENT FORM */}
-            <section className="card block">
+            {/* <section className="card block">
               <h2 className="sec"><i className="bi bi-chat-heart text-gold me"></i>Leave a Devotional Comment</h2>
               <form className="c-form" onSubmit={submitComment}>
                 <div className="grid-2">
@@ -192,10 +254,10 @@ export default function ImageDetailClient({ data }) {
                   <i className="bi bi-send-heart me"></i> Post Comment
                 </button>
               </form>
-            </section>
+            </section> */}
 
             {/* COMMENTS */}
-            <section className="card block">
+            {/* <section className="card block">
               <div className="comments-head">
                 <h2 className="sec m0"><i className="bi bi-people text-gold me"></i>Devotee Comments</h2>
                 <span className="count">{comments.length}</span>
@@ -214,7 +276,7 @@ export default function ImageDetailClient({ data }) {
                   </article>
                 ))}
               </div>
-            </section>
+            </section> */}
 
             {/* KEYWORDS */}
             {Array.isArray(data.imgKeyword) && data.imgKeyword.length > 0 && (
@@ -233,7 +295,7 @@ export default function ImageDetailClient({ data }) {
               <i className="bi bi-shield-check"></i>
               <div>
                 <div className="l-tt">Free for devotional use</div>
-                <a href="#" onClick={(e)=>e.preventDefault()} className="l-link">Read content license</a>
+                <Link href="/license" onClick={(e)=>e.preventDefault()} className="l-link">Read content license</Link>
               </div>
             </div>
 
@@ -247,35 +309,54 @@ export default function ImageDetailClient({ data }) {
 
             <div className="card section">
               <h3 className="sec">Download</h3>
-              <button className="btn btn-solid btn-download">
-                <i className="bi bi-download me"></i> <Link className='text-white' href={`http://localhost:7001/api/v1/images/${data._id}/download`}> 
-                Download HD</Link> <span className="chip">{data.aspect_ratio}</span>
+          <button
+          style={{cursor:"pointer"}}
+                className="btn btn-solid btn-download"
+                onClick={() => handleDownload({ data, setDownloaded, setPopup })}
+              >
+                <i className="bi bi-download me"></i>
+                Download HD
+                <span className="chip">{data.aspect_ratio}</span>
               </button>
               <div className="sub">Ultra-HD • {data.imgLevel}</div>
             </div>
 
-            <div className="card section">
+            {/* <div className="card section">
               <h3 className="sec">Share & Save</h3>
               <div className="row-2">
                 <button className="btn btn-pill btn-share" onClick={onShare}><i className="bi bi-share me"></i> Share</button>
                 <button className="btn btn-pill btn-save"  onClick={onSave}><i className="bi bi-bookmark-heart me"></i> Save</button>
               </div>
               <div className="sub">Send blessings or save for puja.</div>
-            </div>
+            </div> */}
 
-            <div className="card section">
+            {/* <div className="card section">
               <h3 className="sec">Show Devotion</h3>
               <button className="btn btn-solid btn-like" onClick={onLike}><i className="bi bi-heart-fill me"></i> Like this Image</button>
-            </div>
+            </div> */}
 
-            <div className="card section">
+            {/* <div className="card section">
               <h3 className="sec">Support the Seva</h3>
               <button className="btn btn-solid btn-donate"><i className="bi bi-coin me"></i> Donate</button>
               <div className="sub">Helps keep sacred art free.</div>
-            </div>
+            </div> */}
           </aside>
         </div>
       </div>
+
+      {/* BEAUTIFUL POPUP (limit / errors) */}
+      {popup.show && (
+        <div className="popup-overlay" onClick={() => setPopup({ ...popup, show: false })}>
+          <div className="popup-card" onClick={(e) => e.stopPropagation()}>
+            <h2 className="popup-title">{popup.title}</h2>
+            <p className="popup-msg">{popup.message}</p>
+            {popup.date && <p className="popup-date">You can download again after: {popup.date}</p>}
+            <button className="popup-btn" onClick={() => setPopup({ ...popup, show: false })}>
+              Okay
+            </button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

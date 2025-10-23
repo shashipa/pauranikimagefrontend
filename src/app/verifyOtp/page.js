@@ -1,15 +1,18 @@
-import OtpPage from "./client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-export default async function page () {
-   // let router=useRouter()
-    const cookieStore = await cookies();
-  const data = cookieStore.get("email");
-  const email=data?.value  
-    return (<>
-   {email?<OtpPage email={email}/>
-   :redirect("/user")
-   }
-    </>)
-    
+import OtpPage from "./client";
+import DevotionalNavbar from "../navigation/client";
+export default async function Page() {
+  const cookieStore = await cookies();                 // ✅ await here
+  const email = cookieStore.get("email")?.value || ""; // ✅ safe access
+  const token=cookieStore.get("token")?.value || "";
+
+  if (!email) redirect("/user");                       // or render a fallback
+
+  return (
+  <>
+ <DevotionalNavbar token={token}/>
+  <OtpPage email={email} />;
+   </>
+  )
 }

@@ -5,10 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import Swal from 'sweetalert2';
+let URL="https://pauranikart.com/api/v1/"
 import './page.css'; // optional; reuse your BestSection styles if you prefer
 
 /* ---------- Config ---------- */
-const API_BASE = 'http://localhost:7001/api/v1';
 
 /* ---------- Reusable SweetAlert2 toast ---------- */
 const toast = Swal.mixin({
@@ -79,7 +79,7 @@ export default function SearchPage({ userId }) {
           limit: query.limit,
         };
 
-        const { data } = await axios.post(`${API_BASE}/images/search`, body, {
+        const { data } = await axios.post(`${URL}images/search`, body, {
           headers: { 'Content-Type': 'application/json' },
         });
 
@@ -110,7 +110,7 @@ export default function SearchPage({ userId }) {
     async function fetchSaved() {
       if (!userId) return;
       try {
-        const res = await axios.post(`${API_BASE}/user/image`, { userId });
+        const res = await axios.post(`${URL}user/image`, { userId });
         const ids = new Set();
         (res?.data?.imagedetail || []).forEach((doc) => {
           (doc?.imageDetail || []).forEach((d) => {
@@ -152,7 +152,7 @@ export default function SearchPage({ userId }) {
       const imageId = String(item?._id || item?.id || '');
       if (!imageId) return;
 
-      await axios.post(`${API_BASE}/user/image/save`, {
+      await axios.post(`${URL}user/image/save`, {
         userId,
         imageId,
       });

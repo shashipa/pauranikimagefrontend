@@ -8,10 +8,11 @@ const [otp,setOtp]=useState("")
 const [message,setMessage]=useState("")
 console.log(email)
 const router=useRouter()
+let URL="https://pauranikart.com/api/v1/"
 async function  handleSubmit(e) {
     try{
     e.preventDefault()
-    const data=await axios.post("http://localhost:7001/api/v1/user/otp",{email:email,otp:otp},{
+    const data=await axios.post(`${URL}user/otp`,{email:email,otp:otp},{
         headers: {
           'Content-Type': 'application/json',
         },
@@ -30,8 +31,6 @@ catch(error){
 }
     
 }
-
-
 return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-100 to-yellow-50 relative overflow-hidden">
       {/* Subtle glowing background orbs */}

@@ -3,7 +3,7 @@ import './page.css';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API_BASE = 'http://localhost:7001/api/v1';
+const API_BASE = 'https://pauranikart.com/api/v1/';
 
 function PauranikRightHero() {
   const router = useRouter();
@@ -22,8 +22,9 @@ function PauranikRightHero() {
     async function load() {
       try {
         setLoadingTypes(true);
-        const res = await fetch(`${API_BASE}/images/types`, { cache: 'no-store' });
+        const res = await fetch(`${API_BASE}images/types`, { cache: 'no-store' });
         const data = await res.json();
+        console.log(data+"from heder")
         if (!ignore && data && data.ok) {
           setGodOptions(Array.isArray(data.godNames) ? data.godNames : []);
           setStyleOptions(Array.isArray(data.imgArtTypes) ? data.imgArtTypes : []);
@@ -59,8 +60,8 @@ function PauranikRightHero() {
       </p>
 
       <div className="cta-row">
-        <button className="btn-primary" onClick={() => router.push('/explore')}>Explore Library</button>
-        <button className="btn-secondary" onClick={() => router.push('/collections')}>View Collections</button>
+        <button className="btn-primary" onClick={() => router.push('/categories')}>Explore Library</button>
+        <button className="btn-secondary" onClick={() => router.push('/arttype')}>View Collections</button>
       </div>
 
       {/* form so Enter submits */}

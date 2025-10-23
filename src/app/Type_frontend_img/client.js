@@ -6,7 +6,7 @@ import './type.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
-
+let URL="https://pauranikart.com/api/v1/"
 /** Toast */
 const toast = Swal.mixin({
   toast: true,
@@ -136,7 +136,7 @@ export default function Saraswati({ data, userId }) {
     const fetchSaved = async () => {
       if (!userId) return;
       try {
-        const res = await axios.post('http://localhost:7001/api/v1/user/image', { userId });
+        const res = await axios.post(`${URL}user/imag`, { userId });
         const ids = new Set();
         (res?.data?.imagedetail || []).forEach(doc => {
           (doc?.imageDetail || []).forEach(d => {
@@ -166,7 +166,7 @@ export default function Saraswati({ data, userId }) {
       const imageId = String(item?._id || item?.id);
       if (!imageId) return;
 
-      await axios.post('http://localhost:7001/api/v1/user/image/save', { userId, imageId });
+      await axios.post(`${URL}image/save`, { userId, imageId });
       setSavedImages(prev => new Set(prev).add(imageId));
       await toast.fire({ icon: 'success', title: 'Image saved to your collection' });
     } catch (error) {
@@ -208,7 +208,7 @@ export default function Saraswati({ data, userId }) {
     <section className="pk-section">
       {/* gradient heading */}
       <div className="pk-header">
-        <h2 className="pk-title">Best Collections</h2>
+        <h2 className="pk-title">Famous Painting Styles</h2>
       </div>
 
       {/* filters */}

@@ -1,0 +1,219 @@
+/* ===== Container & Heading ===== */
+.pk-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 12px;
+}
+
+.pk-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.pk-title {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  background: linear-gradient(90deg, #9333ea, #ec4899, #f59e0b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ===== Filters ===== */
+.pk-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 10px 0 18px;
+}
+
+.pk-filter {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 9999px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.pk-filter:hover { background: #f8fafc; }
+.pk-filter.active {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+  box-shadow: 0 4px 16px rgba(17, 24, 39, .25);
+}
+
+/* ===== Masonry (Pinterest) — columns 4/3/2 ===== */
+.pk-masonry {
+  column-count: 4;     /* desktop */
+  column-gap: 14px;
+}
+
+/* Tablet: 3 columns */
+@media (max-width: 1024px) {
+  .pk-masonry { column-count: 3; }
+}
+
+/* Mobile: 2 columns */
+@media (max-width: 640px) {
+  .pk-masonry { column-count: 2; }
+}
+
+/* ===== Card ===== */
+.pk-card {
+  position: relative;
+  display: inline-block;   /* required for CSS columns masonry */
+  width: 100%;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  border: none;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* ===== Image (natural height) ===== */
+.pk-img {
+  width: 100%;
+  height: auto;            /* keeps Pinterest variable heights */
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  transition: opacity .3s ease;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.pk-img.is-loading { opacity: 0; }
+.pk-img.is-loaded  { opacity: 1; }
+
+/* ===== Shimmer (shown until image loads) ===== */
+.pk-shimmer {
+  position: absolute;
+  inset: 0;
+  min-height: 220px;       /* ensures visible skeleton on slow connections */
+  background: linear-gradient(100deg, #f2f2f2 0%, #eaeaea 20%, #f2f2f2 40%);
+  background-size: 200% 100%;
+  animation: pk-shimmer 1.2s infinite;
+}
+@keyframes pk-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== Controls (fixed positions) ===== */
+.pk-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;   /* let image clicks pass through, re-enable on buttons */
+}
+
+.pk-ctrl {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;           /* constant width -> no hover jump */
+  background: rgba(255,255,255,0.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  cursor: pointer;
+  pointer-events: all;
+  transition: background .2s ease, box-shadow .2s ease;
+}
+.pk-ctrl:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+.pk-ctrl i { font-size: 18px; color: #111827; }
+
+/* positions */
+.pk-like     { top: 8px; left: 8px; }
+.pk-save     { top: 8px; right: 8px; }
+.pk-download { bottom: 8px; left: 50%; transform: translateX(-50%); }
+
+/* ===== Pagination ===== */
+.pk-actions {
+  gap: 8px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.pk-page {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+.pk-page:hover   { background: #f8fafc; }
+.pk-page.active  { background: #111827; color: #fff; border-color: #111827; }
+.pk-page.dots    { pointer-events: none; opacity: 0.6; }
+
+/* ===== Empty State ===== */
+.pk-empty {
+  margin: 48px auto;
+  max-width: 560px;
+  text-align: center;
+  padding: 28px 22px;
+  border: 1px dashed #e5e7eb;
+  border-radius: 16px;
+  background: #fafafa;
+}
+.pk-empty-emoji { font-size: 42px; margin-bottom: 8px; }
+.pk-empty h3 { margin: 0 0 6px; font-size: 20px; color: #111827; }
+.pk-empty p  { margin: 0; color: #6b7280; font-size: 14px; }
+
+/* ===== Controls (hidden until hover) ===== */
+.pk-controls {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* prevent blocking hover */
+}
+
+.pk-card:hover .pk-controls {
+  opacity: 1;
+  pointer-events: all; /* enable buttons on hover */
+}
+
+/* ===== Buttons styling stays same ===== */
+.pk-ctrl {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: rgba(255,255,255,0.92);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: background .2s ease, box-shadow .2s ease;
+}
+
+.pk-ctrl:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+}
+
+.pk-ctrl i { font-size: 18px; color: #111827; }
+
+/* Positions remain fixed */
+.pk-like     { top: 8px; left: 8px; }
+.pk-save     { top: 8px; right: 8px; }
+.pk-download { bottom: 8px; left: 50%; transform: translateX(-50%); }

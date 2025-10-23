@@ -6,7 +6,7 @@ import './list.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
-
+let URL="https://pauranikart.com/api/v1/"
 /** Reusable SweetAlert2 toast */
 const toast = Swal.mixin({
   toast: true,
@@ -120,7 +120,7 @@ export default function BestSection({ data, initialCount = 30, userId }) {
     const fetchSaved = async () => {
       if (!userId) return;
       try {
-        const res = await axios.post('http://localhost:7001/api/v1/user/image', { userId });
+        const res = await axios.post(`${URL}user/image`, { userId });
 
         const ids = new Set();
         (res?.data?.imagedetail || []).forEach((doc) => {
@@ -151,7 +151,7 @@ export default function BestSection({ data, initialCount = 30, userId }) {
       const imageId = String(item?._id || item?.id);
       if (!imageId) return;
 
-      await axios.post('http://localhost:7001/api/v1/user/image/save', {
+      await axios.post(`${URL}user/image/save`, {
         userId,
         imageId,
       });

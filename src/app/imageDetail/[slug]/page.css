@@ -207,3 +207,21 @@
 .dev-wrap .stat i { color: var(--peacock); }
 .dev-wrap .s-l { color: var(--muted); font-size: 13.5px; }
 .dev-wrap .s-v { font-weight: 900; }
+.popup-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display:flex; align-items:center; justify-content:center; z-index:9999;
+}
+.popup-card {
+  background:#fff; color:#222; border-radius:12px; padding:2rem; width:90%; max-width:420px;
+  text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.25);
+  animation: fadeIn 0.25s ease;
+}
+.popup-title { font-size:1.3rem; font-weight:700; color:#b80000; margin-bottom:.5rem; }
+.popup-msg { font-size:1rem; color:#444; margin-bottom:.5rem; }
+.popup-date { font-size:.9rem; color:#666; margin-bottom:1rem; }
+.popup-btn {
+  background: linear-gradient(90deg,#ff6a00,#ffcc00); color:#fff; border:0;
+  padding:.6rem 1.2rem; border-radius:8px; cursor:pointer; font-weight:600; transition:.2s;
+}
+.popup-btn:hover { transform: scale(1.05); }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }

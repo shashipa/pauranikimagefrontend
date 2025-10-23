@@ -19,7 +19,7 @@ const toast = Swal.mixin({
 });
 
 const PAGE_SIZE = 30; // fixed 30 items per page
-
+let URL="https://pauranikart.com/api/v1/"
 function ImageCard({ item, isSaved, onLike, onSave }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -122,7 +122,7 @@ export default function Durga({ data, userId }) {
     const fetchSaved = async () => {
       if (!userId) return;
       try {
-        const res = await axios.post('http://localhost:7001/api/v1/user/image', { userId });
+        const res = await axios.post(`${URL}user/image`, { userId });
 
         // Expect imagedetail = [ { imageDetail: [ { imageId: <id or populated obj> }, ... ] }, ... ]
         const ids = new Set();
@@ -153,7 +153,7 @@ export default function Durga({ data, userId }) {
       const imageId = String(item?._id || item?.id);
       if (!imageId) return;
 
-      await axios.post('http://localhost:7001/api/v1/user/image/save', {
+      await axios.post(`${URL}user/image/save`, {
         userId,
         imageId,
       });

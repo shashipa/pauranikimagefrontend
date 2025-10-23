@@ -121,7 +121,7 @@
 .best-btn i { font-size: 18px; color: #111827; }
 
 /* ❤️ top-left, 🔖 top-right, ⬇️ bottom-center */
-.best-btn.like { top: 8px; left: 8px; }
+.best-btn.like { top: 8px; left: 8px; border: 1px solid black; }
 .best-btn.save { top: 8px; right: 8px; }
 .best-btn.download { bottom: 8px; left: 50%; transform: translateX(-50%); }
 

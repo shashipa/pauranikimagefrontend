@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:7001'; // your Express base
+const BACKEND_URL = process.env.BACKEND_URL || 'https://pauranikart.com'; // your Express base
 const CF_HOST = process.env.CF_HOST || 'd3n4j7i52d5ghc.cloudfront.net'; // your CloudFront domain
 
 const nextConfig = {
