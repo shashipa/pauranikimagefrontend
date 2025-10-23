@@ -67,9 +67,6 @@ function PauranikRightHero() {
       {/* form so Enter submits */}
       <form className="search-wrap" onSubmit={onSubmit}>
         <div className="search-input-wrap">
-          <svg className="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />
-          </svg>
           <input
             type="text"
             placeholder="Search artworks, deities, collections…"

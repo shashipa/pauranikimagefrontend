@@ -68,7 +68,9 @@ return (
     </div>
    <span>{message}</span>
           <button
+
             type="submit"
+            style={{cursor:"pointer"}}
             className="w-full py-3 sm:py-3.5 rounded-2xl font-semibold text-white text-base sm:text-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-md transition"
           >
             Verify

@@ -6,14 +6,14 @@ import './cat.css';
 
 const CATEGORIES = [
   { key: 'lordganesh',    label: 'Lord Ganesh',    img: '/ganesh.png' },
-  { key: 'godessdurga',     label: 'Godess Durga',     img: '/durgaji.png' },
-  { key: 'godesskali',     label: 'Godess Kaali',     img: '/kaliji.png' },
+  { key: 'godessdurga',     label: 'Goddess Durga',     img: '/durgaji.png' },
+  { key: 'godesskali',     label: 'Goddess Kaali',     img: '/kaliji.png' },
   { key: 'lordshankar',   label: 'Lord Shankar',   img: '/shankarkji.png' },
   { key: 'lordvishnu',    label: 'Lord Vishnu',    img: '/vishnuji.png' },
   { key: 'lordram',       label: 'Lord Ram',       img: '/ramji.png' },
   { key: 'lordkrishna',   label: 'Lord Krishna',   img: '/krishna.png' },
-  { key: 'godesslakshmi',   label: 'Godess Lakshmi',   img: '/lakshmiji.png' },
-  { key: 'godesssaraswati', label: 'Godess Saraswati', img: '/saraswatiji.png' },
+  { key: 'godesslakshmi',   label: 'Goddess Lakshmi',   img: '/lakshmiji.png' },
+  { key: 'godesssaraswati', label: 'Goddess Saraswati', img: '/saraswatiji.png' },
   { key: 'lordhanuman',   label: 'Lord Hanuman',   img: '/hanuman.png' },
 ];
 

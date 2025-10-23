@@ -88,7 +88,7 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
   );
 }
 
-export default function Durga({ data, userId }) {
+export default function Hanuman({ data, userId }) {
   const router = useRouter();
 
   // Normalize incoming items list
@@ -154,7 +154,7 @@ export default function Durga({ data, userId }) {
       const imageId = String(item?._id || item?.id);
       if (!imageId) return;
 
-      await axios.post(`${URL}image/save`, {
+      await axios.post(`${URL}user/image/save`, {
         userId,
         imageId,
       });

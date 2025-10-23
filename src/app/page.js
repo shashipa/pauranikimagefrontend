@@ -305,7 +305,7 @@ export async function generateMetadata() {
     },
     robots: { index: true, follow: true },
     icons: {
-      icon: "/favicon.ico",
+      icon: "/logo.png",
       apple: "/apple-touch-icon.png",
     },
   };

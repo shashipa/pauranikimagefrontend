@@ -87,7 +87,7 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
   );
 }
 
-export default function Durga({ data, userId }) {
+export default function Ram({ data, userId }) {
   const router = useRouter();
 
   // Normalize incoming items list

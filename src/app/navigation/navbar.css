@@ -92,3 +92,30 @@
   .dev-nav__container { padding: 0 12px; }
   .dev-btn { padding: 8px 14px; font-size: 13px; }
 }
+
+/* Add this at the end of your navbar.css */
+@media (max-width: 640px) {
+  .dev-nav__grid {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* left spacer not needed anymore */
+  .dev-nav__spacer {
+    display: none;
+  }
+
+  /* absolute-center the brand */
+  .dev-nav__brand {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* right button stays at the edge */
+  .dev-nav__actions {
+    margin-left: auto;
+  }
+}

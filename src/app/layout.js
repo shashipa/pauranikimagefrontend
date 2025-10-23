@@ -102,6 +102,8 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7353691782374008"
+     crossorigin="anonymous"></script>
         {/* Preconnect to your CDN or S3 (adjust host as needed) */}
         <link rel="preconnect" href="https://d3n4j7i52d5ghc.cloudfront.net" crossOrigin="" />
       </head>

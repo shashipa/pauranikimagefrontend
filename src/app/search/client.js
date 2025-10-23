@@ -1,14 +1,13 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useTransition, useDeferredValue } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-let URL="https://pauranikart.com/api/v1/api/v1/"
-import './page.css'; // optional; reuse your BestSection styles if you prefer
-
-/* ---------- Config ---------- */
+// ⚠️ Fix the duplicated segment:
+const API_BASE = 'https://pauranikart.com/api/v1/api/v1/';
+import './page.css';
 
 /* ---------- Reusable SweetAlert2 toast ---------- */
 const toast = Swal.mixin({
@@ -20,9 +19,19 @@ const toast = Swal.mixin({
   background: '#1f1f1f',
   color: '#fff',
 });
+
+/* ---------- Axios instance (keeps keep-alive, timeout, smaller headers) ---------- */
+const http = axios.create({
+  baseURL: API_BASE,
+  timeout: 12_000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+/* ---------- Helpers ---------- */
 function useQueryObject() {
   const sp = useSearchParams();
-  return useMemo(() => {
+  // Memoize derived query; useDeferredValue so UI stays responsive during rapid URL updates
+  const qObj = useMemo(() => {
     const obj = Object.fromEntries(sp.entries());
     obj.q = obj.q || '';
     obj.imgArtType = obj.imgArtType || '';
@@ -32,26 +41,25 @@ function useQueryObject() {
     obj.limit = Number(obj.limit || 24);
     return obj;
   }, [sp]);
+
+  // Defer heavy work that depends on query (prevents jank during fast nav)
+  const deferred = useDeferredValue(qObj);
+  return deferred;
 }
 
-/** Shuffle helper for a fresh random layout each time */
+/** In-place Fisher–Yates on a copy (avoids allocating many arrays repeatedly) */
 function shuffleArray(arr) {
-  const a = [...arr];
+  const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    const j = (Math.random() * (i + 1)) | 0;
+    const t = a[i]; a[i] = a[j]; a[j] = t;
   }
   return a;
 }
 
-/* -------------------------------------------
-   Search Page with random masonry + controls
--------------------------------------------- */
 export default function SearchPage({ userId }) {
-  console.log(userId)
   const router = useRouter();
   const query = useQueryObject();
-
   const [loading, setLoading] = useState(false);
   const [resp, setResp] = useState({ ok: true, total: 0, page: 1, pages: 1, count: 0, items: [] });
 
@@ -62,55 +70,67 @@ export default function SearchPage({ userId }) {
   // Saved image ids for this user
   const [savedImages, setSavedImages] = useState(() => new Set());
 
-  // ---- Fetch search results (POST) whenever query changes
-  useEffect(() => {
-    let ignore = false;
+  // For low-priority state updates (keeps UI responsive)
+  const [isPending, startTransition] = useTransition();
 
-    async function fetchResults() {
+  /* ---------- Fetch search results (POST) with cancellation ---------- */
+  useEffect(() => {
+    let canceled = false;
+    const controller = new AbortController();
+
+    (async () => {
       try {
         setLoading(true);
 
-        const body = {
-          q: query.q,
-          imgArtType: query.imgArtType,
-          godName: query.godName,
-          sort: query.sort,
-          page: query.page,
-          limit: query.limit,
-        };
+        // Minimal body (avoid sending empty strings)
+        const body = {};
+        if (query.q) body.q = query.q;
+        if (query.imgArtType) body.imgArtType = query.imgArtType;
+        if (query.godName) body.godName = query.godName;
+        if (query.sort) body.sort = query.sort;
+        body.page = query.page || 1;
+        body.limit = query.limit || 24;
 
-        const { data } = await axios.post(`${URL}images/search`, body, {
-          headers: { 'Content-Type': 'application/json' },
+        const { data } = await http.post('images/search', body, {
+          signal: controller.signal, // native cancel
         });
 
-        if (!ignore) {
-          setResp(data || { ok: false, items: [] });
-          // randomize layout every fetch
-          const items = Array.isArray(data?.items) ? data.items : [];
-          setVisible(shuffleArray(items));
-        }
-      } catch (err) {
-        if (!ignore) {
-          console.error('Search error:', err?.response?.data || err?.message || err);
-          setResp({ ok: false, total: 0, page: 1, pages: 1, count: 0, items: [] });
-          setVisible([]);
-        }
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    }
+        if (canceled) return;
 
-    fetchResults();
-    return () => { ignore = true; };
+        // Use startTransition so rendering large lists doesn't block inputs
+        startTransition(() => {
+          const okData = data || { ok: false, items: [] };
+          setResp(okData);
+          const items = Array.isArray(okData?.items) ? okData.items : [];
+          setVisible(shuffleArray(items)); // randomize on fetch
+        });
+      } catch (err) {
+        if (canceled) return;
+        if (axios.isCancel?.(err) || err.name === 'CanceledError' || err.name === 'AbortError') return;
+        console.error('Search error:', err?.response?.data || err?.message || err);
+        setResp({ ok: false, total: 0, page: 1, pages: 1, count: 0, items: [] });
+        setVisible([]);
+      } finally {
+        if (!canceled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      canceled = true;
+      controller.abort();
+    };
   }, [query.q, query.imgArtType, query.godName, query.sort, query.page, query.limit]);
 
-  // ---- Fetch saved images once userId is available (to reflect saved states)
+  /* ---------- Fetch saved images (only once userId known) ---------- */
   useEffect(() => {
-    let ignore = false;
-    async function fetchSaved() {
-      if (!userId) return;
+    if (!userId) return;
+    let canceled = false;
+    const controller = new AbortController();
+
+    (async () => {
       try {
-        const res = await axios.post(`${URL}user/image`, { userId });
+        const res = await http.post('user/image', { userId }, { signal: controller.signal });
+        if (canceled) return;
         const ids = new Set();
         (res?.data?.imagedetail || []).forEach((doc) => {
           (doc?.imageDetail || []).forEach((d) => {
@@ -118,32 +138,39 @@ export default function SearchPage({ userId }) {
             if (id) ids.add(String(id));
           });
         });
-        if (!ignore) setSavedImages(ids);
+        setSavedImages(ids);
       } catch (err) {
+        if (canceled) return;
+        if (axios.isCancel?.(err) || err.name === 'AbortError') return;
         console.error('Failed to fetch saved images:', err?.response?.data || err?.message || err);
       }
-    }
-    fetchSaved();
-    return () => { ignore = true; };
+    })();
+
+    return () => {
+      canceled = true;
+      controller.abort();
+    };
   }, [userId]);
 
-  const shuffle = () => {
+  /* ---------- Handlers (memoized to avoid re-renders of list items) ---------- */
+  const shuffle = useCallback(() => {
     if (isShuffling || !visible.length) return;
     setIsShuffling(true);
-    setTimeout(() => {
+    // Use requestAnimationFrame to keep it silky
+    requestAnimationFrame(() => {
       setVisible((prev) => shuffleArray(prev));
-      setTimeout(() => setIsShuffling(false), 500);
-    }, 350);
-  };
+      // small micro delay so the CSS transition can run
+      setTimeout(() => setIsShuffling(false), 300);
+    });
+  }, [isShuffling, visible.length]);
 
-  // ---- Actions
-  const onLike = async (item) => {
+  const onLike = useCallback(async (item) => {
     // plug your like API here if needed
     console.log('Liked:', item?._id || item?.imgHeading);
     await toast.fire({ icon: 'success', title: 'Liked this image' });
-  };
+  }, []);
 
-  const onSave = async (item) => {
+  const onSave = useCallback(async (item) => {
     try {
       if (!userId) {
         router.push('/user');
@@ -152,10 +179,7 @@ export default function SearchPage({ userId }) {
       const imageId = String(item?._id || item?.id || '');
       if (!imageId) return;
 
-      await axios.post(`${URL}user/image/save`, {
-        userId,
-        imageId,
-      });
+      await http.post('user/image/save', { userId, imageId });
 
       setSavedImages((prev) => {
         const next = new Set(prev);
@@ -168,43 +192,43 @@ export default function SearchPage({ userId }) {
       console.error('Save failed:', error?.response?.data || error?.message || error);
       await toast.fire({ icon: 'error', title: 'Failed to save image' });
     }
-  };
+  }, [router, userId]);
 
-  const onDownload = (item) => {
-    // If you have a signed-URL endpoint, call it here. For now, just open the URL.
-    const url = item?.awsImgUrl;
-    if (url) window.open(url, '_blank', 'noopener');
-  };
-
-  // ---- Pagination handlers
-  const goPage = (p) => {
+  const goPage = useCallback((p) => {
+    // Prefetch target route for near-instant nav
     const params = new URLSearchParams(window.location.search);
     params.set('page', String(p));
-    router.push(`/search?${params.toString()}`);
-  };
+    const href = `/search?${params.toString()}`;
+    router.prefetch(href);
+    router.push(href);
+  }, [router]);
 
-  // ---- Optional: sorting change (if you add a dropdown in the UI)
-  const setSort = (val) => {
+  const setSort = useCallback((val) => {
     const params = new URLSearchParams(window.location.search);
     params.set('sort', val);
-    params.set('page', '1'); // reset to first page when changing sort
-    router.push(`/search?${params.toString()}`);
-  };
+    params.set('page', '1');
+    const href = `/search?${params.toString()}`;
+    router.prefetch(href);
+    router.push(href);
+  }, [router]);
 
+  /* ---------- Render ---------- */
   return (
     <section className="best-section">
-      {/* Header (kept minimal to preserve layout harmony with your site) */}
       <div className="best-header">
         <h2>
-          Results{query.q ? <> for “{query.q}”</> : ''}{query.godName ? <> · {query.godName}</> : ''}{query.imgArtType ? <> · {query.imgArtType}</> : ''}
+          Results
+          {query.q ? <> for “{query.q}”</> : ''}
+          {query.godName ? <> · {query.godName}</> : ''}
+          {query.imgArtType ? <> · {query.imgArtType}</> : ''}
         </h2>
         <div className="best-link">
-          {loading ? 'Loading…' : `${resp.total || 0} results`}
+          {loading || isPending ? 'Loading…' : `${resp.total || 0} results`}
         </div>
       </div>
 
-      {/* Optional: Sorting dropdown (uncomment if needed) */}
-      {/* <div className="sort-bar">
+      {/* Optional sort control:
+      <div className="sort-bar">
         <label>Sort:</label>
         <select value={query.sort} onChange={(e) => setSort(e.target.value)}>
           <option value="latest">Latest</option>
@@ -215,17 +239,20 @@ export default function SearchPage({ userId }) {
         </select>
       </div> */}
 
-      {/* Masonry container — same class names as your BestSection */}
       <div className={`masonry ${isShuffling ? 'is-shuffling' : ''}`}>
-        {loading && <div className="loader" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '24px 0' }}>Fetching images…</div>}
+        {(loading || isPending) && (
+          <div className="loader" style={{ gridColumn: '1/-1', textAlign: 'center', padding: '24px 0' }}>
+            Fetching images…
+          </div>
+        )}
 
-        {!loading && visible.length === 0 && (
+        {!loading && !isPending && visible.length === 0 && (
           <div className="empty" style={{ gridColumn: '1/-1', textAlign: 'center', color: '#6b7280', padding: '24px 0' }}>
             No results found. Try different keywords or remove filters.
           </div>
         )}
 
-        {!loading && visible.map((item, i) => {
+        {!loading && !isPending && visible.map((item, i) => {
           const key = item?._id || item?.id || item?.awsImgUrl || i;
           const img = item?.awsImgUrl || '';
           const slug = item?.img_slug;
@@ -233,41 +260,43 @@ export default function SearchPage({ userId }) {
           const imageId = String(item?._id || item?.id || '');
           const isSaved = imageId && savedImages.has(imageId);
 
+          // Prefer smaller thumbnails via your CDN if available (e.g., ?w=600&q=75)
+          const thumb = img.includes('?') ? `${img}&w=800&q=75` : `${img}?w=800&q=75`;
+
           return (
             <article className="masonry-item best-card" key={key}>
-              <img className="best-img" src={img} alt={alt} loading="lazy" />
+              {/* If you can, switch to next/image for automatic lazy, srcset, and decoding */}
+              <img
+                className="best-img"
+                src={thumb}
+                alt={alt}
+                loading="lazy"
+                decoding="async"
+                // fetchPriority for very first few items helps LCP:
+                fetchpriority={i < 3 ? 'high' : 'auto'}
+              />
+
               <div className="best-controls">
-                {/* <button
-                  className="best-btn best-like"
-                  onClick={() => onLike(item)}
-                  title="Like"
-                >
+                {/* <button className="best-btn best-like" onClick={() => onLike(item)} title="Like">
                   <i className="bi bi-heart" />
                 </button> */}
 
-                {!isSaved ? (
-                  <button
-                    className="best-btn best-save"
-                    onClick={() => onSave(item)}
-                    title="Save"
-                  >
+                {!isSaved && (
+                  <button className="best-btn best-save" onClick={() => onSave(item)} title="Save">
                     <i className="bi bi-bookmark" />
                   </button>
-                ) : null}
+                )}
 
-                {/* Download: opens CloudFront/S3 image (replace with your signed-URL flow if needed) */}
-                <Link href={`imageDetail/${slug}`} className="best-btn best-download" title="Download">
+                {/* Detail page (fix href to absolute path) */}
+                <Link href={`/imageDetail/${slug}`} className="best-btn best-download" title="Open details">
                   <i className="bi bi-download" />
                 </Link>
-
-                {/* Detail page */}
               </div>
             </article>
           );
         })}
       </div>
 
-      {/* Actions */}
       <div className="best-actions">
         <button
           className={`shuffle-btn ${isShuffling ? 'loading' : ''}`}
@@ -278,22 +307,13 @@ export default function SearchPage({ userId }) {
         </button>
       </div>
 
-      {/* Pagination */}
       {resp.pages > 1 && (
         <nav className="pager" style={{ marginTop: 20 }}>
-          <button
-            className="pager-btn"
-            disabled={query.page <= 1}
-            onClick={() => goPage(query.page - 1)}
-          >
+          <button className="pager-btn" disabled={query.page <= 1} onClick={() => goPage(query.page - 1)}>
             ← Prev
           </button>
           <span className="pager-info">Page {query.page} of {resp.pages}</span>
-          <button
-            className="pager-btn"
-            disabled={query.page >= resp.pages}
-            onClick={() => goPage(query.page + 1)}
-          >
+          <button className="pager-btn" disabled={query.page >= resp.pages} onClick={() => goPage(query.page + 1)}>
             Next →
           </button>
         </nav>

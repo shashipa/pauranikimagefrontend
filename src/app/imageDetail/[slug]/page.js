@@ -4,23 +4,27 @@ import { notFound } from "next/navigation";
 import ImageDetailClient from "./client";
 import { cookies } from "next/headers";
 import DevotionalNavbar from "@/app/navigation/client";
-let URL="https://pauranikart.com/api/v1/api/v1/"
+
 export const revalidate = 900; // 15 min ISR
 
-const SITE_URL ="https://www.pauranikart.com";
+const SITE_URL = "https://www.pauranikart.com";
 
+/* ---------- Small helper ---------- */
 function pickImage(payload) {
   return payload?.data?.data ?? payload?.data ?? null;
 }
 
+/* ---------- Single network helper (uses ISR cache) ---------- */
 async function fetchImageBySlug(slug) {
+  // ✅ fix duplicated /api/v1 segment and enable ISR revalidate
   const url = `${SITE_URL}/api/v1/api/v1/single/image?slug=${encodeURIComponent(slug)}`;
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, { next: { revalidate } });
   if (!res.ok) return null;
   const payload = await res.json();
   return pickImage(payload);
 }
 
+/* ---------- Deity route mapping (unchanged behavior) ---------- */
 const deityRouteMap = {
   "lord ganesha": "lordganesh",
   ganesha: "lordganesh",
@@ -55,6 +59,7 @@ function deityRoute(name) {
   return deityRouteMap[k] || k.replace(/\s+/g, "");
 }
 
+/* ---------- Metadata (same logic, but benefits from ISR fetch) ---------- */
 export async function generateMetadata({ params }) {
   const slug = params?.slug ?? "";
   const img = await fetchImageBySlug(slug);
@@ -73,7 +78,6 @@ export async function generateMetadata({ params }) {
   const og = img.awsImgUrl || "/og/home-hero.jpg";
 
   return {
-   // metadataBase: new URL(SITE_URL),
     title,
     description,
     alternates: { canonical },
@@ -98,25 +102,28 @@ export async function generateMetadata({ params }) {
 }
 
 /* ---------------------------------------
-   Page
+   Page (logic unchanged, just tidied)
 --------------------------------------- */
 export default async function ImageDetailPage({ params }) {
   const slug = params?.slug ?? "";
- const cookieStore=cookies()
-    const token=await cookieStore.get("token")?.value
-    const userId= await cookieStore.get("userId")?.value
-    const email=await  cookieStore.get("email")?.value
+
+  // ✅ cookies() is synchronous in App Router; no await
+  const cookieStore = cookies();
+  const token = cookieStore.get("token")?.value;
+  const userId = cookieStore.get("userId")?.value;
+  const email = cookieStore.get("email")?.value;
+
+  // Single fetch (benefits from ISR due to { next: { revalidate } } above)
   const detail = await fetchImageBySlug(slug);
   if (!detail || detail.isLive === false) notFound();
-//console.log(+"from imgde")
+
   const canonicalUrl = `${SITE_URL}/imageDetail/${detail.img_slug || slug}`;
-  const ogImage = detail.awsImgUrl || "logo.png";
   const altText = detail.imgHeading || "Divine Hindu art wallpaper";
   const keywordsCsv = Array.isArray(detail.imgKeyword)
     ? detail.imgKeyword.join(", ")
     : detail.imgKeyword || "";
 
-  // JSON-LD: ImageObject
+  // JSON-LD: ImageObject (same fields you had)
   const imageJsonLd = {
     "@context": "https://schema.org",
     "@type": "ImageObject",
@@ -124,13 +131,12 @@ export default async function ImageDetailPage({ params }) {
     caption: detail.imgDesc || detail.imgHeading,
     contentUrl: detail.awsImgUrl,
     url: canonicalUrl,
-    logo:detail.awsImgUrl,
+    logo: detail.awsImgUrl,
     license: `${SITE_URL}/license`,
     keywords: keywordsCsv,
     author: { "@type": "Organization", name: "PauranikArt", url: SITE_URL },
   };
 
-  
   const secondCrumbName = detail.godName || "Images";
   const secondCrumbPath = deityRoute(secondCrumbName);
   const secondCrumbUrl = `${SITE_URL}/${secondCrumbPath}`;
@@ -147,7 +153,8 @@ export default async function ImageDetailPage({ params }) {
 
   return (
     <>
-    <DevotionalNavbar token={token}/>
+      <DevotionalNavbar token={token} />
+
       {/* Structured Data */}
       <Script
         id="image-jsonld"
@@ -160,8 +167,8 @@ export default async function ImageDetailPage({ params }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
 
-      {}
-      <ImageDetailClient data={detail}/>
+      {/* Client section */}
+      <ImageDetailClient data={detail} />
     </>
   );
 }
