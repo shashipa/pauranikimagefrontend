@@ -19,7 +19,7 @@ const toast = Swal.mixin({
 });
 
 const PAGE_SIZE = 30; // fixed 30 items per page
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
 function ImageCard({ item, isSaved, onLike, onSave }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);

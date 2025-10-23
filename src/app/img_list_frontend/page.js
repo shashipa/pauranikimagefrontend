@@ -10,7 +10,7 @@ const userId=await cookieStore.get("userId")?.value
 console.log(userId+"userId")
 const getSlideImage=async(limit)=>{
     try{
-        let URL="https://pauranikart.com/api/v1/"
+        let URL="https://pauranikart.com/api/v1/api/v1/"
     const url=`${URL}image?limit=${limit}`
     const data=await axios.get(url)
   // console.log(data.data)

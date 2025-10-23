@@ -7,7 +7,7 @@ const cookieStore=cookies()
     const token=await cookieStore.get("token")?.value
     const email=await  cookieStore.get("email")?.value
 const userId=await cookieStore.get("userId")?.value
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
 const getSlideImage=async(limit)=>{
     try{
         let name="Godess Saraswati"

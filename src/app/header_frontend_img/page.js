@@ -3,7 +3,7 @@ import axios from "axios"
 import { cookies } from "next/headers";
 import DevotionalNavbar from "../navigation/client";
 export default async function Categories(){
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
  const cookieStore=cookies()
     const token=await cookieStore.get("token")?.value
     const userId= await cookieStore.get("userId")?.value

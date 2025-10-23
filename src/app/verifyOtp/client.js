@@ -9,7 +9,7 @@ const [otp,setOtp]=useState("")
 const [message,setMessage]=useState("")
 console.log(email)
 const router=useRouter()
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
 async function  handleSubmit(e) {
     try{
     e.preventDefault()

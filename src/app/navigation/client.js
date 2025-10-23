@@ -35,7 +35,7 @@ export default function DevotionalNavbar({ token }) {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [tokendata, setToken] = useState("");
-  const URL = "https://pauranikart.com/api/v1/";
+  const URL = "https://pauranikart.com/api/v1/api/v1/";
 
   async function logoutuser() {
     try {

@@ -17,7 +17,7 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:7001";
 
 async function fetchLatestImages(limit = 5) {
-  const url = `https://www.pauranikart.com/api/v1/image?limit=${limit}`;
+  const url = `https://www.pauranikart.com/api/v1/api/v1/image?limit=${limit}`;
   const res = await fetch(url, { next: { revalidate: 300 } });
   if (!res.ok) return { totalCount: 0, data: [] };
   return res.json();

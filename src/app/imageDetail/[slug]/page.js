@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import ImageDetailClient from "./client";
 import { cookies } from "next/headers";
 import DevotionalNavbar from "@/app/navigation/client";
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
 export const revalidate = 900; // 15 min ISR
 
 const SITE_URL ="https://www.pauranikart.com";
@@ -14,7 +14,7 @@ function pickImage(payload) {
 }
 
 async function fetchImageBySlug(slug) {
-  const url = `${SITE_URL}/api/v1/single/image?slug=${encodeURIComponent(slug)}`;
+  const url = `${SITE_URL}/api/v1/api/v1/single/image?slug=${encodeURIComponent(slug)}`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) return null;
   const payload = await res.json();

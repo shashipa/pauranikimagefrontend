@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 export default function Profile({ userId, email }) {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
   // Name from email (before @), prettified
   const displayName = useMemo(() => {
     if (!email) return 'User';

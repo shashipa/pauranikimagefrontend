@@ -14,7 +14,7 @@ export const metadata = {
     url: "https://www.pauranikart.com/aboutus",
     images: [
       {
-        url: "https://www.pauranikart.com/images/icon.png",
+        url: "https://www.pauranikart.com/logo.png",
         width: 1200,
         height: 630,
         alt: "PauranikArt – About Us",

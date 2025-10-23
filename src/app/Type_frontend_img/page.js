@@ -10,7 +10,7 @@ const userId=await cookieStore.get("userId")?.value
    
     const email=await  cookieStore.get("email")?.value
 console.log(userId+"userId")
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
 const getSlideImage=async(limit)=>{
     try{
     const url=`${URL}image?limit=${limit}`

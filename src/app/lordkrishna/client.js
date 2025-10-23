@@ -6,7 +6,7 @@ import './krishna.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
 /** Reusable SweetAlert2 toast */
 const toast = Swal.mixin({
   toast: true,

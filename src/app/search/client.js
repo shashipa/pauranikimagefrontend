@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
 import './page.css'; // optional; reuse your BestSection styles if you prefer
 
 /* ---------- Config ---------- */

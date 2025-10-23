@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
-const URL = "https://pauranikart.com/api/v1/";
+let URL="https://pauranikart.com/api/v1/api/v1/"
 
 export default function LoginForm({ token }) {
   const router = useRouter();

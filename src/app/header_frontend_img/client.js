@@ -3,7 +3,7 @@ import './page.css';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API_BASE = 'https://pauranikart.com/api/v1/';
+const API_BASE = 'https://pauranikart.com/api/v1/api/v1/';
 
 function PauranikRightHero() {
   const router = useRouter();

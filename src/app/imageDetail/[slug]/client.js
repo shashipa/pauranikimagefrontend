@@ -6,7 +6,7 @@ import './page.css';
 
 import Link from 'next/link';
 import axios from 'axios';
-let URL="https://pauranikart.com/api/v1/"
+let URL="https://pauranikart.com/api/v1/api/v1/"
 
 /**
  * Expected data:
@@ -55,7 +55,7 @@ async function handleDownload({ data, setPopup }) {
     const ip = ipData?.ip || "";
 
     // 2️⃣ POST to your backend and get response as blob
-    const res = await fetch("https://pauranikart.com/api/v1/images/download", {
+    const res = await fetch("https://pauranikart.com/api/v1/api/v1/images/download", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: data._id, ip }),
