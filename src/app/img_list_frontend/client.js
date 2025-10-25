@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import './list.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
-let URL="https://pauranikart.com/api/v1/api/v1/"
+
+const API_BASE = 'https://pauranikart.com/api/v1/api/v1/'; // <-- fixed duplicate path
+
 /** Reusable SweetAlert2 toast */
 const toast = Swal.mixin({
   toast: true,
@@ -18,7 +20,7 @@ const toast = Swal.mixin({
   color: '#fff',
 });
 
-function ImageCard({ item, isSaved, onLike, onSave }) {
+function ImageCard({ item, isSaved, onSave }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
 
@@ -28,7 +30,6 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
 
   return (
     <article className="best-card">
-      {/* Shimmer placeholder until the image resolves */}
       {!loaded && !errored && <div className="img-shimmer" aria-hidden="true" />}
 
       <img
@@ -42,18 +43,7 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
         draggable={false}
       />
 
-      {/* Controls: hidden by default, visible on hover */}
       <div className="best-controls">
-        {/* ❤️ Like — top-left */}
-        {/* <button
-          className="best-btn like"
-          onClick={() => onLike(item)}
-          title="Like"
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <i className="bi bi-heart" />
-        </button> */}
-        {/* 🔖 Save — top-right (or check if already saved) */}
         {!isSaved ? (
           <button
             className="best-btn save"
@@ -69,7 +59,6 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
           </span>
         )}
 
-        {/* ⬇️ Download/Open details — bottom-center */}
         <Link
           href={`imageDetail/${slug}`}
           className="best-btn download"
@@ -84,43 +73,43 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
   );
 }
 
-export default function BestSection({ data, initialCount = 30, userId }) {
+export default function BestSection({ initialLimit = 30, userId }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Normalize incoming items list
-  const ITEMS = useMemo(() => (Array.isArray(data?.data) ? data.data : []), [data]);
+  // read page from URL (?page=) for shareable pagination
+  const urlPage = Number(searchParams.get('page') || 1);
+  const [page, setPage] = useState(urlPage > 0 ? urlPage : 1);
+  const [limit, setLimit] = useState(initialLimit);
+
+  // pagination state
+  const [items, setItems] = useState([]);         // current page items
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  // cache pages in-memory to avoid re-fetching (page -> array)
+  const pageCache = useRef(new Map()); // key: `${page}:${limit}` -> { data, totalPages, totalCount }
 
   // Saved image ids for this user
   const [savedImages, setSavedImages] = useState(() => new Set());
-  const [visible, setVisible] = useState(() => []);
-  const [isShuffling, setIsShuffling] = useState(false);
 
-  // Pick N unique random items from ITEMS
-  const pick = useCallback(
-    (n) => {
-      if (!ITEMS.length) return [];
-      const count = Math.min(n, ITEMS.length);
-      const idxs = new Set();
-      while (idxs.size < count) {
-        idxs.add(Math.floor(Math.random() * ITEMS.length));
-      }
-      return [...idxs].map((i) => ITEMS[i]);
-    },
-    [ITEMS]
-  );
-
-  // Initialize visible items
+  // Update URL when page changes (for SEO/share/back/forward)
   useEffect(() => {
-    setVisible(pick(initialCount));
-  }, [pick, initialCount]);
+    const params = new URLSearchParams(window.location.search);
+    if (page > 1) params.set('page', String(page));
+    else params.delete('page');
+    const url = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+    window.history.replaceState(null, '', url);
+  }, [page]);
 
-  // Fetch user’s saved images
+  // Fetch user’s saved images once
   useEffect(() => {
     const fetchSaved = async () => {
       if (!userId) return;
       try {
-        const res = await axios.post(`${URL}user/image`, { userId });
-
+        const res = await axios.post(`${API_BASE}user/image`, { userId });
         const ids = new Set();
         (res?.data?.imagedetail || []).forEach((doc) => {
           (doc?.imageDetail || []).forEach((d) => {
@@ -129,94 +118,196 @@ export default function BestSection({ data, initialCount = 30, userId }) {
           });
         });
         setSavedImages(ids);
-      } catch (err) {
-        console.error('Failed to fetch saved images:', err?.response?.data || err?.message || err);
+      } catch (e) {
+        // non-blocking
+        console.error('Failed to fetch saved images:', e?.response?.data || e?.message || e);
       }
     };
     fetchSaved();
   }, [userId]);
 
-  const onLike = (item) => {
-    console.log('Liked:', item?.imgHeading || item?.title || item?._id);
-  };
+  // Build endpoint (add filters here if needed)
+  const buildUrl = useCallback(
+    (p, l) => {
+      // Your optimized controller expects: GET /getImage?page&limit
+      const u = new URL(`${API_BASE}image`);
+      u.searchParams.set('page', String(p));
+      u.searchParams.set('limit', String(l));
+      // example filters (optional): u.searchParams.set('godName', 'Vishnu');
+      return u.toString();
+    },
+    []
+  );
 
-  const onSave = async (item) => {
-    try {
-      if (!userId) {
-        router.push('/user');
+  // Fetch one page (with AbortController, cache, and projection handled server-side)
+  const fetchPage = useCallback(
+    async (p, l) => {
+      const cacheKey = `${p}:${l}`;
+      if (pageCache.current.has(cacheKey)) {
+        const cached = pageCache.current.get(cacheKey);
+        setItems(cached.data);
+        setTotalPages(cached.totalPages || 1);
+        setTotalCount(cached.totalCount || 0);
+        setLoading(false);
+        setErr('');
         return;
       }
 
-      const imageId = String(item?._id || item?.id);
-      if (!imageId) return;
+      setLoading(true);
+      setErr('');
+      const controller = new AbortController();
+      const url = buildUrl(p, l);
 
-      await axios.post(`${URL}user/image/save`, {
-        userId,
-        imageId,
-      });
+      try {
+        const res = await axios.get(url, { signal: controller.signal });
+        const payload = res?.data || {};
+        const data = Array.isArray(payload?.data) ? payload.data : [];
+        const tPages = Number(payload?.totalPages || 1);
+        const tCount = Number(payload?.totalCount || data.length || 0);
 
-      // Optimistically mark as saved
-      setSavedImages((prev) => {
-        const next = new Set(prev);
-        next.add(imageId);
-        return next;
-      });
+        // fill state
+        setItems(data);
+        setTotalPages(tPages);
+        setTotalCount(tCount);
 
-      await toast.fire({
-        icon: 'success',
-        title: 'Image saved to your collection',
-      });
-    } catch (error) {
-      console.error('Save failed:', error?.response?.data || error?.message || error);
-      await toast.fire({
-        icon: 'error',
-        title: 'Failed to save image',
-      });
-    }
-  };
+        // cache
+        pageCache.current.set(cacheKey, {
+          data,
+          totalPages: tPages,
+          totalCount: tCount,
+        });
 
-  const shuffle = () => {
-    if (isShuffling) return;
-    setIsShuffling(true);
-    setTimeout(() => {
-      setVisible(pick(initialCount));
-      setTimeout(() => setIsShuffling(false), 500);
-    }, 350);
-  };
+        setLoading(false);
+      } catch (e) {
+        if (axios.isCancel(e)) return;
+        setLoading(false);
+        setErr(e?.response?.data?.message || e?.message || 'Failed to load images');
+      }
+
+      return () => controller.abort();
+    },
+    [buildUrl]
+  );
+
+  // Load when page/limit changes
+  useEffect(() => {
+    fetchPage(page, limit);
+  }, [page, limit, fetchPage]);
+
+  // Save handler
+  const onSave = useCallback(
+    async (item) => {
+      try {
+        if (!userId) {
+          router.push('/user');
+          return;
+        }
+        const imageId = String(item?._id || item?.id);
+        if (!imageId) return;
+
+        await axios.post(`${API_BASE}user/image/save`, { userId, imageId });
+
+        setSavedImages((prev) => {
+          const next = new Set(prev);
+          next.add(imageId);
+          return next;
+        });
+
+        await toast.fire({ icon: 'success', title: 'Image saved to your collection' });
+      } catch (error) {
+        console.error('Save failed:', error?.response?.data || error?.message || error);
+        await toast.fire({ icon: 'error', title: 'Failed to save image' });
+      }
+    },
+    [router, userId]
+  );
+
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
 
   return (
     <section className="best-section">
-      {/* Centered gradient heading */}
       <div className="best-header">
         <h2 className="best-title">Best Collections</h2>
+        {/* Optional: page-size selector (kept minimal; remove if not needed) */}
+        <div className="best-meta">
+          <span>Total: {totalCount}</span>
+          <select
+            aria-label="Images per page"
+            className="best-select"
+            value={limit}
+            onChange={(e) => {
+              const newLimit = Number(e.target.value) || 30;
+              setPage(1); // reset to first page when limit changes
+              setLimit(newLimit);
+            }}
+          >
+            <option value={12}>12</option>
+            <option value={24}>24</option>
+            <option value={30}>30</option>
+            <option value={48}>48</option>
+            <option value={60}>60</option>
+          </select>
+        </div>
       </div>
 
-      {/* Pinterest Masonry container (columns) */}
-      <div className={`masonry ${isShuffling ? 'is-shuffling' : ''}`}>
-        {visible.map((item, i) => {
-          const key = item?._id || item?.id || item?.awsImgUrl || i;
-          const imageId = String(item?._id || item?.id || '');
-          const isSaved = imageId && savedImages.has(imageId);
+      {/* Error state */}
+      {err && (
+        <div className="best-error">
+          <p>{err}</p>
+          <button className="shuffle-btn" onClick={() => fetchPage(page, limit)}>Retry</button>
+        </div>
+      )}
 
-          return (
-            <ImageCard
-              key={key}
-              item={item}
-              isSaved={isSaved}
-              onLike={onLike}
-              onSave={onSave}
-            />
-          );
-        })}
+      {/* Masonry grid */}
+      <div className={`masonry ${loading ? 'is-loading' : ''}`}>
+        {loading &&
+          // lightweight skeletons (no heavy DOM)
+          Array.from({ length: Math.min(limit, 30) }).map((_, i) => (
+            <div key={`s-${i}`} className="best-card">
+              <div className="img-shimmer" aria-hidden="true" />
+            </div>
+          ))}
+
+        {!loading &&
+          items.map((item, i) => {
+            const key = item?._id || item?.id || item?.awsImgUrl || i;
+            const imageId = String(item?._id || item?.id || '');
+            const isSaved = imageId && savedImages.has(imageId);
+
+            return (
+              <ImageCard
+                key={key}
+                item={item}
+                isSaved={isSaved}
+                onSave={onSave}
+              />
+            );
+          })}
       </div>
 
+      {/* Pagination controls */}
       <div className="best-actions">
         <button
-          className={`shuffle-btn ${isShuffling ? 'loading' : ''}`}
-          onClick={shuffle}
-          disabled={isShuffling}
+          className="shuffle-btn"
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={!canPrev || loading}
+          aria-disabled={!canPrev || loading}
         >
-          {isShuffling ? 'Shuffling…' : 'Shuffle Images'}
+          ← Previous
+        </button>
+
+        <span className="page-indicator">
+          Page {Math.min(page, totalPages)} of {Math.max(totalPages, 1)}
+        </span>
+
+        <button
+          className="shuffle-btn"
+          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          disabled={!canNext || loading}
+          aria-disabled={!canNext || loading}
+        >
+          Next →
         </button>
       </div>
     </section>

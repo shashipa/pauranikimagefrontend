@@ -1,4 +1,4 @@
-import GalleryPage from "./client"
+import Type from "./client"
  import axios from "axios"
  import { cookies } from "next/headers"
 import DevotionalNavbar from "../navigation/client";
@@ -11,21 +11,21 @@ const userId=await cookieStore.get("userId")?.value
     const email=await  cookieStore.get("email")?.value
 console.log(userId+"userId")
 let URL="https://pauranikart.com/api/v1/api/v1/"
-const getSlideImage=async(limit)=>{
+const getSlideImage=async()=>{
     try{
-    const url=`${URL}image?limit=${limit}`
+    const url=`${URL}image/all?page=1&limit=40000`
     const data=await axios.get(url)
-   //console.log(data.data)
+   console.log(data.data)
     return data.data
     }
     catch(error){
         console.log(error)
     }
 }
-const data=await getSlideImage(40)
+const data=await getSlideImage()
 
     return (<>
-    <GalleryPage data={data} userId={userId}/>
+    <Type data={data} userId={userId}/>
     </>)
 }
 

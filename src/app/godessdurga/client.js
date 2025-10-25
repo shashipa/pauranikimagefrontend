@@ -2,10 +2,10 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import './durga.css';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import Link from 'next/link';
+let URL="https://pauranikart.com/api/v1/api/v1/"
 
 /** Reusable SweetAlert2 toast */
 const toast = Swal.mixin({
@@ -19,7 +19,7 @@ const toast = Swal.mixin({
 });
 
 const PAGE_SIZE = 30; // fixed 30 items per page
-let URL="https://pauranikart.com/api/v1/api/v1/"
+
 function ImageCard({ item, isSaved, onLike, onSave }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
@@ -87,7 +87,7 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
   );
 }
 
-export default function Durga({ data, userId }) {
+export default function Ganesh({ data, userId }) {
   const router = useRouter();
 
   // Normalize incoming items list
@@ -122,7 +122,7 @@ export default function Durga({ data, userId }) {
     const fetchSaved = async () => {
       if (!userId) return;
       try {
-        const res = await axios.post(`${URL}user/image`, { userId });
+        const res = await axios.post(`${URL}image`, { userId });
 
         // Expect imagedetail = [ { imageDetail: [ { imageId: <id or populated obj> }, ... ] }, ... ]
         const ids = new Set();
@@ -153,7 +153,7 @@ export default function Durga({ data, userId }) {
       const imageId = String(item?._id || item?.id);
       if (!imageId) return;
 
-      await axios.post(`${URL}user/image/save`, {
+      await axios.post(`${URL}image/save`, {
         userId,
         imageId,
       });

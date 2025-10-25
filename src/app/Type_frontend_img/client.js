@@ -21,9 +21,8 @@ const toast = Swal.mixin({
 const PAGE_SIZE = 30;
 
 const FILTERS = [
-  'All',
   'Pattachitra',
-  'Mithila (Madhubani)',
+  'Mithila',
   'Tanjore Painting',
   'Miniature Paintings',
   'Warli Painting',
@@ -62,14 +61,14 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
 
       {/* fixed-position controls */}
       <div className="pk-controls">
-        <button
+        {/* <button
           className="pk-ctrl pk-like"
           title="Like"
           onClick={() => onLike(item)}
           onContextMenu={(e) => e.preventDefault()}
         >
           <i className="bi bi-heart" />
-        </button>
+        </button> */}
 
         {!isSaved ? (
           <button
@@ -99,7 +98,7 @@ function ImageCard({ item, isSaved, onLike, onSave }) {
   );
 }
 
-export default function Saraswati({ data, userId }) {
+export default function Type({ data, userId }) {
   const router = useRouter();
 
   const ITEMS = useMemo(() => (Array.isArray(data?.data) ? data.data : []), [data]);
