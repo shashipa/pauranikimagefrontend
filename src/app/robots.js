@@ -1,9 +1,12 @@
-// app/robots.js
 export default function robots() {
-  const base = "http://localhost3000";
+  const base = "https://www.pauranikart.com"; // MUST be your live, secure domain
   return {
     rules: { userAgent: "*", allow: ["/"] },
-    sitemap: [`${base}/sitemap.xml`],
+    // Inform Google about BOTH sitemaps
+    sitemap: [
+      `${base}/sitemap.xml`,
+      `${base}/image-sitemap.xml`, // NEW: The dedicated image sitemap
+    ],
     host: base,
   };
 }

@@ -231,13 +231,13 @@ export default function BestSection({ initialLimit = 30, userId }) {
         <h2 className="best-title">Best Collections</h2>
         {/* Optional: page-size selector (kept minimal; remove if not needed) */}
         <div className="best-meta">
-          <span>Total: {totalCount}</span>
+          {/* <span>Total: {totalCount}</span> */}
           <select
             aria-label="Images per page"
             className="best-select"
             value={limit}
             onChange={(e) => {
-              const newLimit = Number(e.target.value) || 30;
+              const newLimit = Number(e.target.value);
               setPage(1); // reset to first page when limit changes
               setLimit(newLimit);
             }}
